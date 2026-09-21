@@ -1,0 +1,222 @@
+{
+  "key": "original",
+  "name": "ต้นฉบับ",
+  "background": "background.webp",
+  "dimensions": {
+    "width": 2000,
+    "height": 1414
+  },
+  "positions": {},
+  "layout": {
+    "version": 2,
+    "elements": [
+      {
+        "id": "recipient_name",
+        "box": {
+          "x": 0.19,
+          "y": 0.45,
+          "width": 0.62,
+          "height": 0.1
+        },
+        "kind": "text",
+        "label": "ชื่อผู้รับ",
+        "style": {
+          "font": {
+            "key": "sarabun",
+            "source": "builtin"
+          },
+          "align": "center",
+          "color": "#111111",
+          "weight": 400,
+          "line_height": 1.25,
+          "font_size_px": 52
+        },
+        "source": "recipient_name",
+        "visible": true,
+        "required": true,
+        "sample_value": "ชื่อผู้รับเกียรติบัตร"
+      },
+      {
+        "id": "topic",
+        "box": {
+          "x": 0.15999999999999998,
+          "y": 0.1834576128829697,
+          "width": 0.68,
+          "height": 0.1
+        },
+        "kind": "text",
+        "label": "หัวข้อ / กิจกรรม",
+        "style": {
+          "font": {
+            "key": "sarabun",
+            "source": "builtin"
+          },
+          "align": "center",
+          "color": "#111111",
+          "weight": 400,
+          "line_height": 1.25,
+          "font_size_px": 42
+        },
+        "source": "topic",
+        "visible": true,
+        "required": true,
+        "sample_value": "หัวข้อ / กิจกรรม"
+      },
+      {
+        "id": "verification_qr",
+        "box": {
+          "x": 0.03050182385598632,
+          "y": 0.7690931529443374,
+          "width": 0.14,
+          "height": 0.1476
+        },
+        "kind": "qr",
+        "label": "คิวอาร์โค้ด",
+        "source": "verification_url",
+        "show_id": false,
+        "visible": true,
+        "required": true,
+        "sample_value": "http://127.0.0.1:8000/?code=PREVIEW12345678"
+      },
+      {
+        "id": "verification_qr_id",
+        "box": {
+          "x": 0.03050182385598632,
+          "y": 0.9120938247292146,
+          "width": 0.14,
+          "height": 0.0324
+        },
+        "kind": "text",
+        "label": "ID เกียรติบัตร",
+        "style": {
+          "font": {
+            "key": "sarabun",
+            "source": "builtin"
+          },
+          "align": "center",
+          "color": "#111111",
+          "weight": 400,
+          "line_height": 1.0,
+          "font_size_px": 19
+        },
+        "source": "verification_code",
+        "visible": true,
+        "required": false
+      },
+      {
+        "id": "field_value",
+        "box": {
+          "x": 0.25569037351984736,
+          "y": 0.3126154166424816,
+          "width": 0.4886192529603053,
+          "height": 0.11320644800299026
+        },
+        "kind": "multiline",
+        "label": "ช่องข้อมูลเพิ่มเติม1",
+        "style": {
+          "font": {
+            "key": "sarabun",
+            "source": "builtin"
+          },
+          "align": "center",
+          "color": "#111111",
+          "weight": 400,
+          "line_height": 1.25,
+          "font_size_px": 36
+        },
+        "source": "custom.field_value",
+        "visible": true,
+        "required": false,
+        "sample_value": "ช่องข้อมูลเพิ่มเติม"
+      },
+      {
+        "id": "field_value_2",
+        "box": {
+          "x": 0.22967738415004668,
+          "y": 0.5655707629257261,
+          "width": 0.5406452316999066,
+          "height": 0.09021062801041412
+        },
+        "kind": "multiline",
+        "label": "ช่องข้อมูลเพิ่มเติม2",
+        "style": {
+          "font": {
+            "key": "sarabun",
+            "source": "builtin"
+          },
+          "align": "center",
+          "color": "#111111",
+          "weight": 400,
+          "line_height": 1.25,
+          "font_size_px": 36
+        },
+        "source": "custom.field_value_2",
+        "visible": true,
+        "required": false,
+        "sample_value": "ช่องข้อมูลเพิ่มเติม"
+      },
+      {
+        "id": "field_value_3",
+        "box": {
+          "x": 0.3223485052811625,
+          "y": 0.6713102289577418,
+          "width": 0.3683094171412812,
+          "height": 0.07871268643400921
+        },
+        "kind": "date_range",
+        "label": "ช่วงวัน",
+        "style": {
+          "font": {
+            "key": "sarabun",
+            "source": "builtin"
+          },
+          "align": "center",
+          "color": "#111111",
+          "weight": 400,
+          "line_height": 1.25,
+          "font_size_px": 36
+        },
+        "format": {
+          "locale": "th-TH",
+          "prefix": "ระหว่าง",
+          "suffix": "",
+          "pattern": "long",
+          "calendar": "buddhist",
+          "separator": " -"
+        },
+        "source": "custom.field_value_3",
+        "visible": true,
+        "required": false,
+        "sample_value": {
+          "end": "2026-08-15",
+          "start": "2026-08-13"
+        }
+      },
+      {
+        "id": "signature",
+        "box": {
+          "x": 0.3752000150752566,
+          "y": 0.7596866417811134,
+          "width": 0.26260639755309295,
+          "height": 0.20780558673741203
+        },
+        "kind": "signature",
+        "label": "ลายเซ็นผู้ลงนาม 1",
+        "style": {
+          "font": {
+            "key": "sarabun",
+            "source": "builtin"
+          },
+          "align": "center",
+          "color": "#111111",
+          "weight": 400,
+          "line_height": 1.25,
+          "font_size_px": 28
+        },
+        "source": "signature",
+        "visible": true,
+        "required": true
+      }
+    ]
+  }
+}

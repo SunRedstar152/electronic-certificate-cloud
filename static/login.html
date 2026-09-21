@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="เข้าสู่ระบบจัดการเกียรติบัตรอิเล็กทรอนิกส์ PKRU">
+    <title>เข้าสู่ระบบ | PKRU Electronic Certificate</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=20260813-5">
+</head>
+<body class="login-page">
+    <a class="skip-link" href="#main-content">ข้ามไปยังเนื้อหาหลัก</a>
+    <header class="site-header site-header-transparent">
+        <a class="brand" href="/" aria-label="PKRU Electronic Certificate หน้าหลัก">
+            <span class="brand-mark" aria-hidden="true">PK</span>
+            <span><strong>PKRU</strong><small>Electronic Certificate</small></span>
+        </a>
+        <a class="button button-ghost button-small" href="/">ตรวจสอบเกียรติบัตร</a>
+    </header>
+
+    <main id="main-content" class="login-main">
+        <section class="login-card" aria-labelledby="login-heading">
+            <div class="card-heading">
+                <p class="eyebrow">ACCOUNT ACCESS</p>
+                <h2 id="login-heading">เข้าสู่ระบบ</h2>
+                <p class="muted">ใช้บัญชีที่ผู้ดูแลระบบมอบให้</p>
+            </div>
+
+            <div id="login-alert" class="technical-error" role="alert" aria-live="assertive" hidden>
+                <strong id="login-error-code"></strong>
+                <span id="login-error-message"></span>
+            </div>
+
+            <form id="login-form" class="stack-form" novalidate>
+                <div class="field">
+                    <label for="username">ชื่อผู้ใช้งาน</label>
+                    <input id="username" name="username" type="text" autocomplete="username" maxlength="100" required autofocus>
+                </div>
+                <div class="field">
+                    <label for="password">รหัสผ่าน</label>
+                    <div class="password-field">
+                        <input id="password" name="password" type="password" autocomplete="current-password" maxlength="128" required>
+                        <button id="toggle-password" class="text-button" type="button" aria-pressed="false">แสดง</button>
+                    </div>
+                </div>
+                <button id="login-button" class="button button-primary button-block" type="submit">เข้าสู่ระบบ</button>
+            </form>
+
+            <p class="login-note">หากไม่สามารถเข้าสู่ระบบได้ โปรดติดต่อผู้ดูแลระบบของมหาวิทยาลัย</p>
+        </section>
+    </main>
+
+    <script src="/static/js/api-client.js?v=20260813-5" defer></script>
+    <script src="/static/js/auth.js?v=20260813-5" defer></script>
+</body>
+</html>

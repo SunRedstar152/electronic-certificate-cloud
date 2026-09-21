@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ตรวจสอบความถูกต้องของเกียรติบัตรอิเล็กทรอนิกส์ PKRU">
+    <title>ตรวจสอบเกียรติบัตร | PKRU Electronic Certificate</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=20260813-5">
+</head>
+<body class="public-page">
+    <a class="skip-link" href="#main-content">ข้ามไปยังเนื้อหาหลัก</a>
+    <header class="site-header">
+        <a class="brand" href="/" aria-label="PKRU Electronic Certificate หน้าหลัก">
+            <span class="brand-mark" aria-hidden="true">PK</span>
+            <span><strong>PKRU</strong><small>Electronic Certificate</small></span>
+        </a>
+    </header>
+
+    <main id="main-content" class="public-main">
+        <section class="hero-panel" aria-labelledby="verify-heading">
+            <p class="eyebrow">CERTIFICATE VERIFICATION</p>
+            <h1 id="verify-heading">ตรวจสอบเกียรติบัตร</h1>
+            <p class="hero-copy">กรอกรหัสตรวจสอบที่แสดงบนเกียรติบัตร หรือเปิดลิงก์จากคิวอาร์โค้ดเพื่อยืนยันข้อมูลกับระบบของมหาวิทยาลัย</p>
+
+            <form id="verify-form" class="verify-form" novalidate>
+                <label for="certificate-code">รหัสตรวจสอบเกียรติบัตร</label>
+                <div class="input-action">
+                    <input id="certificate-code" name="code" type="text" inputmode="text" maxlength="64" autocomplete="off" placeholder="ตัวอย่าง ABCD1234EFGH5678" aria-describedby="code-help" required>
+                    <button id="verify-button" class="button button-primary" type="submit">ตรวจสอบ</button>
+                </div>
+                <p id="code-help" class="field-help">ระบบไม่แสดงข้อมูลภายใน เช่น รหัสประจำตัวผู้รับ</p>
+            </form>
+        </section>
+
+        <section id="verification-result" class="result-panel" aria-labelledby="result-heading" aria-live="polite" hidden>
+            <div id="result-state" class="result-state">
+                <span id="result-icon" class="result-icon" aria-hidden="true">✓</span>
+                <div>
+                    <p id="result-kicker" class="eyebrow">VERIFICATION RESULT</p>
+                    <h2 id="result-heading">ผลการตรวจสอบ</h2>
+                    <p id="result-summary" class="muted"></p>
+                </div>
+            </div>
+
+            <figure id="certificate-preview" class="public-certificate-preview" hidden>
+                <img id="certificate-preview-image" alt="" decoding="async">
+                <figcaption>ใบเกียรติบัตรฉบับจริงที่ออกโดยหน่วยงาน</figcaption>
+            </figure>
+
+            <div id="certificate-downloads" class="certificate-downloads" hidden>
+                <span>ดาวน์โหลดใบเกียรติบัตร</span>
+                <a id="download-pdf" class="button button-primary" href="#" download>PDF</a>
+                <a id="download-jpg" class="button button-secondary" href="#" download>JPG</a>
+                <a id="download-png" class="button button-secondary" href="#" download>PNG</a>
+            </div>
+
+            <details id="certificate-information" class="certificate-information" hidden>
+                <summary>ดูรายละเอียดการตรวจสอบ</summary>
+                <dl id="certificate-details" class="detail-grid">
+                    <div><dt>ผู้รับเกียรติบัตร</dt><dd id="result-name">—</dd></div>
+                    <div><dt>หัวข้อ / กิจกรรม</dt><dd id="result-topic">—</dd></div>
+
+                    <div><dt>หน่วยงานผู้ออก</dt><dd id="result-organization">—</dd></div>
+                    <div id="result-external-org-row" hidden><dt>หน่วยงานภายนอก</dt><dd id="result-external-org">—</dd></div>
+                    <div><dt>วันที่ออก</dt><dd id="result-date">—</dd></div>
+                    <div><dt>รหัสตรวจสอบ</dt><dd id="result-code" class="monospace">—</dd></div>
+                    <div><dt>สถานะ</dt><dd id="result-status">—</dd></div>
+                </dl>
+            </details>
+
+            <div id="technical-error" class="technical-error" role="alert" hidden>
+                <strong id="error-code"></strong>
+                <span id="error-message"></span>
+            </div>
+
+            <div class="result-actions">
+                <button id="verify-another" class="button button-secondary" type="button">ตรวจสอบรหัสอื่น</button>
+            </div>
+        </section>
+
+        <aside class="trust-strip" aria-label="ข้อมูลการตรวจสอบ">
+            <div><strong>ยืนยันจากระบบโดยตรง</strong><span>ข้อมูลสถานะล่าสุดจาก PKRU</span></div>
+            <div><strong>คุ้มครองข้อมูลผู้รับ</strong><span>แสดงเฉพาะข้อมูลที่จำเป็น</span></div>
+            <div><strong>รองรับคิวอาร์โค้ด</strong><span>เปิดลิงก์พร้อมรหัสได้ทันที</span></div>
+        </aside>
+    </main>
+
+    <footer class="site-footer">PKRU Electronic Certificate · ระบบเกียรติบัตรอิเล็กทรอนิกส์</footer>
+    <script src="/static/js/api-client.js?v=20260813-5" defer></script>
+    <script src="/static/js/main.js?v=20260813-5" defer></script>
+</body>
+</html>

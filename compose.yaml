@@ -1,0 +1,114 @@
+name: pkru-certificate
+
+x-app: &app
+  image: pkru-certificate:local
+  build:
+    context: .
+    target: runtime
+  init: true
+  environment: &app-environment
+    POSTGRES_HOST: db
+    POSTGRES_USER: ${POSTGRES_USER:-certificate_app}
+    POSTGRES_DB: ${POSTGRES_DB:-pkru_certificate}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.docker}
+    SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env.docker}
+    PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8000}
+    QR_UPDATE_ON_STARTUP: ${QR_UPDATE_ON_STARTUP:-true}
+    CERTIFICATE_STORAGE_FORMAT: ${CERTIFICATE_STORAGE_FORMAT:-webp}
+    WEBP_METHOD: ${WEBP_METHOD:-4}
+    PNG_COMPRESS_LEVEL: ${PNG_COMPRESS_LEVEL:-9}
+    AUDIT_RETENTION_DAYS: ${AUDIT_RETENTION_DAYS:-365}
+    LOGIN_PAIR_MAX_FAILURES: ${LOGIN_PAIR_MAX_FAILURES:-5}
+    LOGIN_IP_MAX_FAILURES: ${LOGIN_IP_MAX_FAILURES:-30}
+    LOGIN_WINDOW_SECONDS: ${LOGIN_WINDOW_SECONDS:-900}
+    REQUIRE_RAQM: "true"
+    ENABLE_SCHEDULER: "false"
+  volumes:
+    - certificate_storage:/app/storage
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-certificate_app}
+      POSTGRES_DB: ${POSTGRES_DB:-pkru_certificate}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.docker}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  migrate:
+    <<: *app
+    command: ["python", "scripts/initialize_database.py"]
+    restart: "no"
+    healthcheck:
+      disable: true
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    <<: *app
+    restart: unless-stopped
+    ports:
+      - "${APP_BIND_HOST:-127.0.0.1}:${APP_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  scheduler:
+    <<: *app
+    profiles: ["maintenance"]
+    command: ["python", "scripts/run_scheduler.py"]
+    restart: unless-stopped
+    healthcheck:
+      disable: true
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  backup:
+    image: pkru-certificate-backup:local
+    build:
+      context: .
+      dockerfile: docker/backup.Dockerfile
+    init: true
+    restart: unless-stopped
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER:-certificate_app}
+      PGDATABASE: ${POSTGRES_DB:-pkru_certificate}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.docker}
+      BACKUP_TIMEZONE: ${BACKUP_TIMEZONE:-Asia/Bangkok}
+      BACKUP_DAILY_TIME: ${BACKUP_DAILY_TIME:-03:00}
+      BACKUP_RETAIN_COUNT: ${BACKUP_RETAIN_COUNT:-14}
+      BACKUP_RETRY_SECONDS: ${BACKUP_RETRY_SECONDS:-900}
+    volumes:
+      - certificate_storage:/app/storage:ro
+      - type: bind
+        source: ${BACKUP_DIRECTORY:-./backups}
+        target: /backups
+    healthcheck:
+      test: ["CMD", "python3", "/backup-tools/backup.py", "health"]
+      interval: 60s
+      timeout: 10s
+      start_period: 5m
+      retries: 3
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  postgres_data:
+  certificate_storage:

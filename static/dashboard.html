@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="พื้นที่จัดการ PKRU Electronic Certificate">
+    <title>พื้นที่จัดการ | PKRU Electronic Certificate</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=20260813-5">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=20260921-editor">
+</head>
+<body class="dashboard-page">
+    <a class="skip-link" href="#dashboard-content">ข้ามไปยังเนื้อหาหลัก</a>
+    <div class="dashboard-shell">
+        <aside id="sidebar" class="sidebar" aria-label="เมนูหลัก">
+            <div class="sidebar-brand-row">
+                <a class="brand" href="/dashboard">
+                    <span class="brand-mark" aria-hidden="true">PK</span>
+                    <span><strong>PKRU</strong><small>Electronic Certificate</small></span>
+                </a>
+                <button id="close-navigation" class="icon-button mobile-only" type="button" aria-label="ปิดเมนู">×</button>
+            </div>
+
+            <nav id="admin-navigation" class="dashboard-nav" aria-label="เมนูผู้ดูแลระบบ" hidden>
+                <p class="nav-section-label">ผู้ดูแลระบบ</p>
+                <button class="nav-item is-active" type="button" data-view="admin-overview"><span aria-hidden="true">◫</span>ภาพรวม</button>
+                <button class="nav-item" type="button" data-view="organizations"><span aria-hidden="true">◇</span>หน่วยงาน</button>
+                <button class="nav-item" type="button" data-view="audit"><span aria-hidden="true">≡</span>บันทึกการใช้งาน</button>
+            </nav>
+
+            <nav id="organization-navigation" class="dashboard-nav" aria-label="เมนูหน่วยงาน" hidden>
+                <p class="nav-section-label">การจัดการ</p>
+                <button class="nav-item is-active" type="button" data-view="organization-overview"><span aria-hidden="true">◫</span>ภาพรวม</button>
+                <button class="nav-item" type="button" data-view="templates"><span aria-hidden="true">▧</span>แม่แบบ</button>
+                <button class="nav-item" type="button" data-view="single"><span aria-hidden="true">＋</span>ออกเกียรติบัตรรายบุคคล</button>
+                <button class="nav-item" type="button" data-view="bulk"><span aria-hidden="true">⇧</span>ออกเกียรติบัตรแบบกลุ่ม</button>
+                <p class="nav-section-label">ติดตามผล</p>
+                <button class="nav-item" type="button" data-view="batches"><span aria-hidden="true">≣</span>รายการประมวลผล</button>
+                <button class="nav-item" type="button" data-view="certificates"><span aria-hidden="true">□</span>เกียรติบัตร</button>
+            </nav>
+
+            <div class="sidebar-account">
+                <span id="account-avatar" class="account-avatar" aria-hidden="true">P</span>
+                <span><strong id="account-name">กำลังโหลด…</strong><small id="account-role"></small></span>
+                <button id="logout-button" class="icon-button" type="button" title="ออกจากระบบ" aria-label="ออกจากระบบ">↪</button>
+            </div>
+        </aside>
+
+        <div id="navigation-scrim" class="navigation-scrim" hidden></div>
+
+        <main id="dashboard-content" class="dashboard-content" tabindex="-1">
+            <header class="dashboard-topbar">
+                <button id="open-navigation" class="icon-button mobile-only" type="button" aria-controls="sidebar" aria-expanded="false" aria-label="เปิดเมนู">☰</button>
+                <div>
+                    <p id="page-eyebrow" class="eyebrow">DASHBOARD</p>
+                    <h1 id="page-title">ภาพรวม</h1>
+                </div>
+                <a class="button button-ghost button-small" href="/" target="_blank" rel="noopener">หน้าตรวจสอบ</a>
+            </header>
+
+            <div id="global-alert" class="technical-error global-alert" role="alert" aria-live="assertive" hidden>
+                <strong id="global-error-code"></strong>
+                <span id="global-error-message"></span>
+                <button id="dismiss-alert" class="icon-button" type="button" aria-label="ปิดข้อความ">×</button>
+            </div>
+
+            <section id="view-admin-overview" class="dashboard-view" data-title="ภาพรวมระบบ" data-eyebrow="ADMIN OVERVIEW">
+                <div id="admin-stats" class="stats-grid" aria-live="polite">
+                    <article class="stat-card"><span>หน่วยงานทั้งหมด</span><strong data-stat="organizations.total">—</strong><small data-stat-note="organizations">กำลังโหลด</small></article>
+                    <article class="stat-card"><span>บัญชีที่ใช้งาน</span><strong data-stat="accounts.active">—</strong><small>บัญชีหน่วยงาน</small></article>
+                    <article class="stat-card"><span>รายการประมวลผล</span><strong data-stat="batches.total">—</strong><small>ทุกหน่วยงาน</small></article>
+                    <article class="stat-card stat-card-accent"><span>เกียรติบัตรทั้งหมด</span><strong data-stat="certificates.total">—</strong><small>ออกแล้วในระบบ</small></article>
+                </div>
+                <div class="content-grid content-grid-2">
+                    <article class="panel">
+                        <div class="panel-heading"><div><p class="eyebrow">QUICK ACTIONS</p><h2>งานที่ใช้บ่อย</h2></div></div>
+                        <div class="quick-actions">
+                            <button class="quick-action" type="button" data-open-view="organizations"><span aria-hidden="true">＋</span><span><strong>เพิ่มหน่วยงาน</strong><small>สร้างบัญชีและกำหนดข้อมูลติดต่อ</small></span></button>
+                            <button class="quick-action" type="button" data-open-view="audit"><span aria-hidden="true">≡</span><span><strong>ตรวจสอบบันทึก</strong><small>ค้นหาการเปลี่ยนแปลงล่าสุด</small></span></button>
+                        </div>
+                    </article>
+                    <article class="panel">
+                        <div class="panel-heading"><div><p class="eyebrow">SYSTEM HEALTH</p><h2>สถานะการใช้งาน</h2></div></div>
+                        <div id="admin-health" class="status-list"><p class="loading-state">กำลังโหลดข้อมูล…</p></div>
+                    </article>
+                </div>
+            </section>
+
+            <section id="view-organizations" class="dashboard-view" data-title="หน่วยงาน" data-eyebrow="ORGANIZATION MANAGEMENT" hidden>
+                <div class="panel">
+                    <div class="panel-heading panel-heading-wrap">
+                        <div><h2>หน่วยงานและบุคลากร</h2><p class="muted">สร้างหน่วยงาน เพิ่มบุคลากร และจัดการบัญชีแต่ละคน</p></div>
+                        <button id="create-organization-button" class="button button-primary" type="button">เพิ่มหน่วยงานหรือบุคลากร</button>
+                    </div>
+                    <form id="organization-filters" class="filter-bar">
+                        <div class="field field-grow"><label for="organization-search">ค้นหา</label><input id="organization-search" type="search" placeholder="ชื่อหน่วยงานหรือชื่อผู้ใช้งาน"></div>
+                        <div class="field"><label for="organization-status">สถานะ</label><select id="organization-status"><option value="">ทั้งหมด</option><option value="active">ใช้งาน</option><option value="inactive">ไม่ใช้งาน</option></select></div>
+                        <button class="button button-secondary filter-submit" type="submit">ค้นหา</button>
+                    </form>
+                    <div class="table-shell">
+                        <table class="data-table">
+                            <thead><tr><th>หน่วยงาน</th><th>บุคลากร</th><th>ข้อมูลติดต่อ</th><th>สถานะ</th><th>การจัดการ</th></tr></thead>
+                            <tbody id="organizations-table-body"></tbody>
+                        </table>
+                        <div id="organizations-state" class="table-state">กำลังโหลดข้อมูล…</div>
+                    </div>
+                    <nav id="organizations-pagination" class="pagination" aria-label="หน้ารายการหน่วยงาน"></nav>
+                </div>
+            </section>
+
+            <section id="view-audit" class="dashboard-view" data-title="บันทึกการใช้งาน" data-eyebrow="AUDIT TRAIL" hidden>
+                <div class="panel">
+                    <div class="panel-heading"><div><h2>ประวัติการเปลี่ยนแปลง</h2><p class="muted">บันทึกทางเทคนิคจะแสดงค่าเดิมเป็นภาษาอังกฤษตาม API</p></div></div>
+                    <form id="audit-filters" class="filter-bar filter-bar-wide">
+                        <div class="field"><label for="audit-organization">หน่วยงาน</label><select id="audit-organization"><option value="">ทั้งหมด</option></select></div>
+                        <div class="field"><label for="audit-action">รหัสการทำงาน</label><input id="audit-action" type="search" placeholder="เช่น certificate.revoke"></div>
+                        <div class="field"><label for="audit-from">ตั้งแต่วันที่</label><input id="audit-from" type="date"></div>
+                        <div class="field"><label for="audit-to">ถึงวันที่</label><input id="audit-to" type="date"></div>
+                        <button class="button button-secondary filter-submit" type="submit">กรองข้อมูล</button>
+                    </form>
+                    <div id="audit-list" class="audit-list" aria-live="polite"><p class="loading-state">กำลังโหลดข้อมูล…</p></div>
+                    <nav id="audit-pagination" class="pagination" aria-label="หน้าบันทึกการใช้งาน"></nav>
+                </div>
+            </section>
+
+            <section id="view-organization-overview" class="dashboard-view" data-title="ภาพรวมหน่วยงาน" data-eyebrow="ORGANIZATION OVERVIEW" hidden>
+                <div class="stats-grid">
+                    <article class="stat-card"><span>แม่แบบที่ใช้งาน</span><strong id="overview-template-count">—</strong><small>พร้อมออกเกียรติบัตร</small></article>
+                    <article class="stat-card"><span>รายการแบบกลุ่ม</span><strong id="overview-batch-count">—</strong><small>ประวัติทั้งหมด</small></article>
+                    <article class="stat-card stat-card-accent"><span>เกียรติบัตรทั้งหมด</span><strong id="overview-certificate-count">—</strong><small>ของหน่วยงาน</small></article>
+                    <article class="stat-card"><span>ถูกเพิกถอน</span><strong id="overview-revoked-count">—</strong><small>ยังตรวจสอบสถานะได้</small></article>
+                </div>
+                <div class="content-grid content-grid-2">
+                    <article class="panel">
+                        <div class="panel-heading"><div><p class="eyebrow">START HERE</p><h2>เริ่มออกเกียรติบัตร</h2></div></div>
+                        <div class="quick-actions">
+                            <button class="quick-action" type="button" data-open-view="single"><span aria-hidden="true">＋</span><span><strong>รายบุคคล</strong><small>กรอกข้อมูลและออกทันที</small></span></button>
+                            <button class="quick-action" type="button" data-open-view="bulk"><span aria-hidden="true">⇧</span><span><strong>แบบกลุ่ม</strong><small>อัปโหลดไฟล์หรือวางข้อมูล</small></span></button>
+                        </div>
+                    </article>
+                    <article class="panel">
+                        <div class="panel-heading"><div><p class="eyebrow">RECENT BATCHES</p><h2>รายการล่าสุด</h2></div><button class="text-button" type="button" data-open-view="batches">ดูทั้งหมด</button></div>
+                        <div id="overview-recent-batches" class="status-list"><p class="loading-state">กำลังโหลดข้อมูล…</p></div>
+                    </article>
+                </div>
+            </section>
+
+            <section id="view-templates" class="dashboard-view" data-title="แม่แบบเกียรติบัตร" data-eyebrow="TEMPLATE LIBRARY" hidden>
+                <div class="panel">
+                    <div class="panel-heading panel-heading-wrap"><div><h2>แม่แบบของหน่วยงาน</h2><p class="muted">กำหนดตำแหน่งชื่อ หัวข้อ วันที่ และคิวอาร์โค้ดจากภาพตัวอย่าง</p></div><button id="create-template-button" class="button button-primary" type="button">เพิ่มแม่แบบ</button></div>
+                    <div id="template-list" class="template-grid" aria-live="polite"><p class="loading-state">กำลังโหลดข้อมูล…</p></div>
+                </div>
+            </section>
+
+
+            <section id="view-single" class="dashboard-view" data-title="ออกเกียรติบัตรรายบุคคล" data-eyebrow="SINGLE ISSUANCE" hidden>
+                <div class="single-issuance-shell">
+                    <form id="single-form" class="panel stack-form single-issuance-form">
+                        <div class="panel-heading"><div><h2>ข้อมูลเกียรติบัตร</h2><p class="muted">กรอกข้อมูลตามช่องที่กำหนดไว้ในแม่แบบ</p></div></div>
+                        <div class="field"><label for="single-template">แม่แบบ</label><select id="single-template" required><option value="">เลือกแม่แบบ</option></select></div>
+
+                        <div class="field"><label for="single-name">ชื่อผู้รับ</label><input id="single-name" maxlength="255" required></div>
+                        <div class="field"><label for="single-topic">หัวข้อ / กิจกรรม</label><textarea id="single-topic" maxlength="500" rows="3" required></textarea></div>
+                        <div class="field"><label for="single-date">วันที่ออก</label><input id="single-date" type="date" required></div>
+                        <fieldset class="source-options"><legend>ประเภทผู้รับ</legend><label><input type="radio" name="single-recipient-type" value="INTERNAL" checked><span>บุคลากรภายใน</span></label><label><input type="radio" name="single-recipient-type" value="EXTERNAL"><span>บุคคลภายนอก</span></label></fieldset>
+                        <div id="single-external-org-field" class="field" hidden><label for="single-external-org">หน่วยงานภายนอก</label><input id="single-external-org" maxlength="255" placeholder="ชื่อหน่วยงาน/บริษัทของผู้รับ"></div>
+                        <div id="single-custom-fields" class="dynamic-field-grid" aria-live="polite"></div>
+                        <div id="single-signature-host" hidden></div>
+                        <label class="check-row"><input id="single-confirm" type="checkbox" required><span>ตรวจสอบชื่อผู้รับและข้อมูลเรียบร้อยแล้ว</span></label>
+                        <button id="single-submit" class="button button-primary" type="submit">ยืนยันการออกเกียรติบัตร</button>
+                        <div id="single-result" class="inline-result" aria-live="polite" hidden></div>
+                    </form>
+                </div>
+            </section>
+
+            <section id="view-bulk" class="dashboard-view" data-title="ออกเกียรติบัตรแบบกลุ่ม" data-eyebrow="BULK ISSUANCE" hidden>
+                <ol class="stepper" aria-label="ขั้นตอนการออกเกียรติบัตรแบบกลุ่ม"><li class="is-active" data-bulk-step-marker="1"><span>1</span>เตรียมข้อมูล</li><li data-bulk-step-marker="2"><span>2</span>จับคู่คอลัมน์</li><li data-bulk-step-marker="3"><span>3</span>ตรวจสอบ</li><li data-bulk-step-marker="4"><span>4</span>ประมวลผล</li></ol>
+                <form id="bulk-form" class="panel stack-form">
+                    <section class="bulk-step" data-bulk-step="1">
+                        <div class="panel-heading"><div><h2>ข้อมูลส่วนกลางและไฟล์รายชื่อ</h2><p class="muted">นำเข้ารายชื่อจากไฟล์ Excel (.xlsx)</p></div></div>
+                        <div class="form-grid"><div class="field"><label for="bulk-template">แม่แบบ</label><select id="bulk-template" required><option value="">เลือกแม่แบบ</option></select></div><div class="field"><label for="bulk-date">วันที่ออก</label><input id="bulk-date" type="date" required></div></div>
+
+                        <div class="field"><label for="bulk-topic">หัวข้อ / กิจกรรม</label><textarea id="bulk-topic" maxlength="500" rows="2" required></textarea></div>
+                        <fieldset class="dynamic-mapping-panel"><legend>ข้อมูลเพิ่มเติม (ใช้เหมือนกันทุกคน)</legend><p class="field-help">กรอกข้อมูลตรงนี้ถ้าต้องการให้ผู้รับทุกคนมีข้อมูลเพิ่มเติมส่วนนี้เหมือนกัน</p><div id="bulk-custom-fields" class="dynamic-field-grid" aria-live="polite"></div></fieldset>
+                        <fieldset class="source-options"><legend>ประเภทผู้รับ</legend><label><input type="radio" name="bulk-recipient-type" value="INTERNAL" checked><span>บุคลากรภายใน</span></label><label><input type="radio" name="bulk-recipient-type" value="EXTERNAL"><span>บุคคลภายนอก</span></label></fieldset>
+                        <div id="bulk-external-org-field" class="field" hidden><label for="bulk-external-org">หน่วยงานภายนอก</label><input id="bulk-external-org" maxlength="255" placeholder="ชื่อหน่วยงาน/บริษัทของผู้รับ"></div>
+                        <div id="bulk-file-field" class="field"><label for="bulk-file">ไฟล์รายชื่อ Excel (.xlsx)</label><input id="bulk-file" type="file" accept=".xlsx" required><p class="field-help">ไฟล์ต้องมีแถวหัวตาราง และมีข้อมูลรหัสอ้างอิงกับชื่อผู้รับ</p></div>
+                        <div class="form-actions"><button class="button button-primary" type="button" data-bulk-next="2">ถัดไป: จับคู่คอลัมน์</button></div>
+                    </section>
+                    <section class="bulk-step" data-bulk-step="2" hidden>
+                        <div class="panel-heading"><div><h2>จับคู่คอลัมน์</h2><p class="muted">ระบุชื่อหัวคอลัมน์จากไฟล์ให้ตรงกับข้อมูลที่ระบบต้องใช้</p></div></div>
+                        <div id="bulk-mapping-table-container" class="table-shell" style="overflow-x: auto; margin-bottom: 2rem;">
+                            <table class="data-table" id="bulk-mapping-table">
+                                <thead>
+                                    <tr id="bulk-mapping-selectors"></tr>
+                                    <tr id="bulk-mapping-headers"></tr>
+                                </thead>
+                                <tbody id="bulk-mapping-preview-body"></tbody>
+                            </table>
+                        </div>
+                        <div class="form-actions"><button class="button button-secondary" type="button" data-bulk-back="1">ย้อนกลับ</button><button id="bulk-preview-button" class="button button-primary" type="button">ตรวจสอบข้อมูล</button></div>
+                    </section>
+                    <section class="bulk-step" data-bulk-step="3" hidden>
+                        <div class="panel-heading panel-heading-wrap"><div><h2>ตรวจสอบและแก้ไขข้อมูล</h2><p id="bulk-preview-summary" class="muted"></p></div><button id="bulk-preview-certificate" class="button button-secondary button-small" type="button">ดูตัวอย่างเกียรติบัตร</button></div>
+                        <div class="table-shell"><table class="data-table editable-table"><thead><tr><th>แถว</th><th>รหัสอ้างอิง</th><th>ชื่อผู้รับ</th><th>ข้อมูลเพิ่มเติม</th><th>ผลตรวจสอบ</th></tr></thead><tbody id="bulk-preview-body"></tbody></table><div id="bulk-preview-state" class="table-state" hidden></div></div>
+                        <div id="bulk-signature-host" hidden></div>
+                        <div class="form-actions"><button class="button button-secondary" type="button" data-bulk-back="2">ย้อนกลับ</button><button id="bulk-confirm-button" class="button button-primary" type="button">ยืนยันและสร้างรายการ</button></div>
+                    </section>
+                    <section class="bulk-step" data-bulk-step="4" hidden>
+                        <div class="processing-card"><span id="bulk-processing-icon" class="processing-icon" aria-hidden="true">↻</span><div><h2 id="bulk-processing-title">กำลังประมวลผล</h2><p id="bulk-processing-message" class="muted">กรุณาอย่าปิดหน้านี้ระหว่างการสร้างเกียรติบัตร</p></div></div>
+                        <div class="progress-track" role="progressbar" aria-label="ความคืบหน้าการประมวลผล" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="bulk-progress"></span></div>
+                        <div id="bulk-result-summary" class="stats-grid compact-stats" hidden><article class="stat-card"><span>ทั้งหมด</span><strong data-bulk-result="total">0</strong></article><article class="stat-card"><span>สำเร็จ</span><strong data-bulk-result="success">0</strong></article><article class="stat-card"><span>ไม่สำเร็จ</span><strong data-bulk-result="failure">0</strong></article></div>
+                        <div id="bulk-result-actions" class="form-actions" hidden><button id="bulk-retry-button" class="button button-secondary" type="button">ลองประมวลผลแถวที่ล้มเหลวอีกครั้ง</button><button id="bulk-download-button" class="button button-primary" type="button">ดาวน์โหลด ZIP</button><button id="bulk-reset-button" class="button button-ghost" type="button">เริ่มรายการใหม่</button></div>
+                        <div id="bulk-individual-downloads" class="bulk-individual-downloads" hidden></div>
+                    </section>
+                </form>
+            </section>
+
+            <section id="view-batches" class="dashboard-view" data-title="รายการประมวลผล" data-eyebrow="BATCH HISTORY" hidden>
+                <div class="panel">
+                    <div class="panel-heading"><div><h2>ประวัติการออกแบบกลุ่ม</h2><p class="muted">ตรวจสอบผล ลองใหม่เฉพาะแถวที่ล้มเหลว และดาวน์โหลด ZIP</p></div></div>
+                    <div class="filter-bar"><div class="field field-grow"><label for="batch-search">ค้นหา</label><input id="batch-search" type="search" placeholder="หัวข้อหรือหมายเลขรายการ"></div><div class="field"><label for="batch-status">สถานะ</label><select id="batch-status"><option value="">ทั้งหมด</option><option value="validated">รอประมวลผล</option><option value="processing">กำลังประมวลผล</option><option value="completed">สำเร็จ</option><option value="partial">สำเร็จบางส่วน</option><option value="failed">ล้มเหลว</option></select></div></div>
+                    <div id="batch-list" class="batch-list" aria-live="polite"><p class="loading-state">กำลังโหลดข้อมูล…</p></div>
+                    <nav id="batches-pagination" class="pagination" aria-label="หน้ารายการประมวลผล"></nav>
+                </div>
+            </section>
+
+            <section id="view-certificates" class="dashboard-view" data-title="เกียรติบัตร" data-eyebrow="CERTIFICATE REGISTER" hidden>
+                <div class="panel">
+                    <div class="panel-heading"><div><h2>เกียรติบัตรของหน่วยงาน</h2><p class="muted">ค้นหา ดาวน์โหลด และเพิกถอนโดยเก็บประวัติไว้</p></div></div>
+                    <div class="filter-bar"><div class="field field-grow"><label for="certificate-search">ค้นหา</label><input id="certificate-search" type="search" placeholder="ชื่อผู้รับ หัวข้อ หรือรหัสตรวจสอบ"></div><div class="field"><label for="certificate-status">สถานะ</label><select id="certificate-status"><option value="">ทั้งหมด</option><option value="active">ใช้งาน</option><option value="revoked">เพิกถอน</option></select></div></div>
+                    <div class="table-shell"><table class="data-table"><thead><tr><th>ผู้รับ / รหัส</th><th>หัวข้อ</th><th>วันที่ออก</th><th>สถานะ</th><th><span class="visually-hidden">การจัดการ</span></th></tr></thead><tbody id="certificates-table-body"></tbody></table><div id="certificates-state" class="table-state">กำลังโหลดข้อมูล…</div></div>
+                    <nav id="certificates-pagination" class="pagination" aria-label="หน้ารายการเกียรติบัตร"></nav>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <dialog id="organization-dialog" class="modal-dialog" aria-labelledby="organization-dialog-title">
+        <form id="organization-form" class="dialog-form">
+            <div class="dialog-heading"><div><p class="eyebrow">ORGANIZATION PERSONNEL</p><h2 id="organization-dialog-title">สร้างหน่วยงานใหม่</h2></div><button class="icon-button" type="button" data-close-dialog="organization-dialog" aria-label="ปิด">×</button></div>
+            <input id="organization-id" type="hidden">
+            <div id="organization-selector-field" class="field"><label for="organization-selector">เลือกหน่วยงาน</label><select id="organization-selector" required><option value="new">+ สร้างหน่วยงานใหม่</option></select></div>
+            <div id="organization-fields">
+                <div class="field"><label for="organization-name">ชื่อหน่วยงาน</label><input id="organization-name" maxlength="255"></div>
+                <div class="form-grid"><div class="field"><label for="organization-contact-name">ผู้ประสานงาน</label><input id="organization-contact-name" maxlength="255"></div><div class="field"><label for="organization-email">อีเมล</label><input id="organization-email" type="email" maxlength="320"></div></div>
+                <div class="field"><label for="organization-phone">โทรศัพท์</label><input id="organization-phone" type="tel" maxlength="50"></div>
+            </div>
+            <div id="personnel-account-fields" class="form-grid"><div class="field"><label for="organization-username">ชื่อผู้ใช้งานบุคลากร</label><input id="organization-username" minlength="3" maxlength="100"></div><div class="field"><label for="organization-password">รหัสผ่านเริ่มต้น</label><input id="organization-password" type="password" minlength="12" maxlength="128" autocomplete="new-password"></div></div>
+            <div class="form-actions"><button class="button button-secondary" type="button" data-close-dialog="organization-dialog">ยกเลิก</button><button id="organization-save-button" class="button button-primary" type="submit">บันทึก</button></div>
+        </form>
+    </dialog>
+
+    <dialog id="personnel-dialog" class="modal-dialog" aria-labelledby="personnel-dialog-title">
+        <div class="dialog-form">
+            <div class="dialog-heading"><div><p class="eyebrow">PERSONNEL ACCOUNTS</p><h2 id="personnel-dialog-title">จัดการบุคลากร</h2></div><button class="icon-button" type="button" data-close-dialog="personnel-dialog" aria-label="ปิด">×</button></div>
+            <input id="personnel-organization-id" type="hidden">
+            <button id="add-personnel-button" class="button button-primary" type="button">เพิ่มบุคลากร</button>
+            <div class="table-shell personnel-table-shell"><table class="data-table"><thead><tr><th>ชื่อผู้ใช้งาน</th><th>สถานะ</th><th>การจัดการ</th></tr></thead><tbody id="personnel-table-body"></tbody></table><div id="personnel-state" class="table-state">กำลังโหลดข้อมูล…</div></div>
+        </div>
+    </dialog>
+
+    <dialog id="password-dialog" class="modal-dialog modal-dialog-small" aria-labelledby="password-dialog-title">
+        <form id="password-form" class="dialog-form">
+            <div class="dialog-heading"><div><p class="eyebrow">RESET PASSWORD</p><h2 id="password-dialog-title">ตั้งรหัสผ่านใหม่</h2></div><button class="icon-button" type="button" data-close-dialog="password-dialog" aria-label="ปิด">×</button></div>
+            <input id="password-organization-id" type="hidden">
+            <input id="password-user-id" type="hidden">
+            <div class="field"><label for="new-password">รหัสผ่านใหม่</label><input id="new-password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required><p class="field-help">อย่างน้อย 12 ตัวอักษร</p></div>
+            <div class="form-actions"><button class="button button-secondary" type="button" data-close-dialog="password-dialog">ยกเลิก</button><button class="button button-primary" type="submit">ยืนยัน</button></div>
+        </form>
+    </dialog>
+
+    <dialog id="template-dialog" class="modal-dialog modal-dialog-wide" aria-labelledby="template-dialog-title">
+        <form id="template-form" class="dialog-form">
+            <div class="dialog-heading"><div><p class="eyebrow">TEMPLATE EDITOR</p><h2 id="template-dialog-title">เพิ่มแม่แบบ</h2></div><button class="icon-button" type="button" data-close-dialog="template-dialog" aria-label="ปิด">×</button></div>
+            <input id="template-id" type="hidden">
+            <div class="form-grid"><div class="field"><label for="template-name">ชื่อแม่แบบ</label><input id="template-name" maxlength="255" required></div><div id="template-file-field" class="field"><label for="template-file">ภาพพื้นหลัง PNG หรือ JPEG</label><input id="template-file" aria-describedby="template-upload-help" type="file" accept="image/png,image/jpeg,.png,.jpg,.jpeg"><small id="template-upload-help" class="field-help">เลือก PNG หรือ JPG ไม่เกิน 10 MB · กว้างและสูงไม่เกิน 16,383 พิกเซล</small></div></div>
+            <div class="template-editor-v2">
+                <section class="template-workspace" aria-label="พื้นที่จัดวางแม่แบบ">
+                    <div class="template-alignment-toolbar">
+                        <div class="template-center-actions" role="group" aria-label="จัดบล็อกที่เลือกให้อยู่กึ่งกลางหน้า">
+                            <button class="button button-secondary button-small" type="button" data-template-center="horizontal" disabled>กึ่งกลางแนวนอน</button>
+                            <button class="button button-secondary button-small" type="button" data-template-center="vertical" disabled>กึ่งกลางแนวตั้ง</button>
+                            <button class="button button-secondary button-small" type="button" data-template-center="both" disabled>กึ่งกลางหน้า</button>
+                        </div>
+                        <label class="check-row"><input id="template-snap-centers" type="checkbox" checked><span>ดูดเข้ากึ่งกลางหน้าและบล็อกอื่น</span></label>
+                        <p class="field-help">เลือกบล็อกแล้วกดจัดกึ่งกลาง หรือลากตามเส้นไกด์ · กด Alt ค้างเพื่อขยับอิสระ</p>
+                    </div>
+                    <div id="template-stage-scroll" class="template-stage-scroll"><div id="template-canvas" class="template-canvas"><img id="template-preview-image" alt="ภาพตัวอย่างแม่แบบ"><div id="template-element-layer" class="template-element-layer"></div><div id="template-guide-x" class="template-alignment-guide template-alignment-guide-x" aria-hidden="true" hidden></div><div id="template-guide-y" class="template-alignment-guide template-alignment-guide-y" aria-hidden="true" hidden></div><p id="template-empty-preview">เลือกภาพพื้นหลังเพื่อเริ่มจัดตำแหน่ง</p></div></div>
+                    <p class="field-help">ข้อความยาวแสดงเลยขอบบล็อกได้ตามขนาดตัวอักษรที่ตั้งไว้ · ข้อความหลายบรรทัดตัดบรรทัดตามความกว้างและต่อเลยขอบล่างได้ · ส่วนที่เลยขอบหน้ากระดาษจะไม่แสดง</p>
+                    <div class="real-preview-panel"><div><strong>ภาพตัวอย่างจากตัวเรนเดอร์จริง</strong><p id="template-preview-status" class="field-help">ระบบจะอัปเดตเมื่อเปลี่ยนตำแหน่งหรือรูปแบบ</p></div><img id="template-real-preview" alt="ภาพตัวอย่างใบเกียรติบัตรจากตัวเรนเดอร์จริง"></div>
+                </section>
+                <aside class="template-inspector">
+                    <div class="drag-position-help"><strong>ช่องข้อมูลในแม่แบบ</strong><p class="field-help">เพิ่มช่องได้ตามรูปแบบเกียรติบัตร แล้วเลือกแต่ละช่องเพื่อปรับรายละเอียด</p></div>
+                    <div class="form-grid compact-grid"><div class="field"><label for="template-new-kind">ประเภทช่อง</label><select id="template-new-kind"><option value="text">ข้อความ</option><option value="multiline">ข้อความหลายบรรทัด</option><option value="date">วันที่</option><option value="time">เวลา</option><option value="date_range">ช่วงวันที่</option><option value="time_range">ช่วงเวลา</option><option value="qr">QR พร้อม ID</option><option value="verification_code">ID เกียรติบัตร (ข้อความ)</option><option value="signature">บล็อกลายเซ็น</option></select></div><div class="field"><label for="template-new-label">ชื่อช่อง</label><input id="template-new-label" maxlength="255" placeholder="เช่น หน่วยงาน"></div></div>
+                    <button id="template-add-element" class="button button-primary" type="button">เพิ่มช่องข้อมูล</button>
+                    <div id="template-element-list" class="template-element-list" aria-label="รายการช่องข้อมูล"></div>
+                    <fieldset id="template-properties" class="template-properties" disabled><legend>รายละเอียดช่องที่เลือก</legend>
+                        <div class="field"><label for="property-label">ชื่อที่แสดง</label><input id="property-label" maxlength="255"></div>
+                        <label class="check-row"><input id="property-required" type="checkbox"><span>บังคับกรอก</span></label>
+                        <div id="property-text-options" class="stack-form compact-stack">
+                            <div class="field"><label for="property-font">ฟอนต์</label><select id="property-font"></select></div>
+                            <div class="form-grid compact-grid"><div class="field"><label for="property-font-size">ขนาดตัวอักษร (px)</label><input id="property-font-size" type="number" min="8" max="512"></div><div class="field"><label for="property-color">สีตัวอักษร</label><input id="property-color" type="color"></div></div>
+                            <div class="form-grid compact-grid"><div class="field"><label for="property-weight">น้ำหนัก</label><select id="property-weight"><option value="400">ปกติ</option><option value="700">หนา</option></select></div><div class="field"><label for="property-align">จัดแนว</label><select id="property-align"><option value="left">ซ้าย</option><option value="center">กลาง</option><option value="right">ขวา</option></select></div></div>
+                            <div class="field"><label for="property-line-height">ระยะบรรทัด</label><input id="property-line-height" type="number" min="1" max="3" step="0.05"></div>
+                        </div>
+                        <div id="property-format-options" class="stack-form compact-stack"><div class="form-grid compact-grid"><div class="field"><label for="property-calendar">ปี</label><select id="property-calendar"><option value="buddhist">พ.ศ.</option><option value="gregorian">ค.ศ.</option></select></div><div class="field"><label for="property-pattern">รูปแบบ</label><select id="property-pattern"><option value="long">แบบยาว</option><option value="medium">แบบกลาง</option><option value="short">แบบสั้น</option><option value="numeric">ตัวเลข</option></select></div></div><div class="field"><label for="property-prefix">ข้อความนำหน้า</label><input id="property-prefix" maxlength="255"></div><div class="field"><label for="property-separator">ตัวคั่นช่วง</label><input id="property-separator" maxlength="255"></div><div class="field"><label for="property-suffix">ข้อความต่อท้าย</label><input id="property-suffix" maxlength="255"></div></div>
+                        <div class="form-grid compact-grid"><div class="field"><label for="property-width">ความกว้าง (%)</label><input id="property-width" type="number" min="0.001" max="100" step="any"></div><div class="field"><label for="property-height">ความสูง (%)</label><input id="property-height" type="number" min="0.001" max="100" step="any"></div></div>
+                        <button id="template-remove-element" class="button button-danger" type="button">ลบช่องนี้</button>
+                    </fieldset>
+                    <fieldset class="font-library">
+                        <legend>คลังฟอนต์ของหน่วยงาน</legend>
+                        <div class="field"><label for="font-upload-name">ชื่อฟอนต์</label><input id="font-upload-name" maxlength="255"></div>
+                        <div class="field"><label for="font-upload-file">ไฟล์ TTF หรือ OTF</label><input id="font-upload-file" type="file" accept=".ttf,.otf,font/ttf,font/otf"></div>
+                        <button id="font-upload-button" class="button button-secondary" type="button" style="margin-bottom: 1rem;">อัปโหลดฟอนต์</button>
+                        
+                        <div class="field">
+                            <label for="font-delete-select">จัดการฟอนต์ที่อัปโหลด</label>
+                            <select id="font-delete-select">
+                                <option value="">-- เลือกฟอนต์เพื่อลบ --</option>
+                            </select>
+                        </div>
+                        <button id="font-delete-button" class="button button-danger" type="button">ลบฟอนต์ที่เลือก</button>
+                    </fieldset>
+                </div>
+            </div>
+            <div class="form-actions"><button class="button button-secondary" type="button" data-close-dialog="template-dialog">ยกเลิก</button><button id="template-save-button" class="button button-primary" type="submit">บันทึกแม่แบบ</button></div>
+        </form>
+    </dialog>
+
+    <dialog id="certificate-preview-dialog" class="modal-dialog modal-dialog-wide" aria-labelledby="certificate-preview-title"><div class="dialog-form"><div class="dialog-heading"><div><p class="eyebrow">REPRESENTATIVE PREVIEW</p><h2 id="certificate-preview-title">ตัวอย่างเกียรติบัตร</h2></div><button class="icon-button" type="button" data-close-dialog="certificate-preview-dialog" aria-label="ปิด">×</button></div><div id="bulk-certificate-preview" class="certificate-preview certificate-preview-large"></div></div></dialog>
+
+    <template id="signature-editor-template">
+        <fieldset class="signature-editor">
+            <legend>ลายเซ็นผู้ลงนาม</legend>
+            <div class="form-grid compact-grid">
+                <div class="field"><label>ชื่อผู้ลงนาม</label><input data-signature-role="name" maxlength="255"></div>
+                <div class="field"><label>ตำแหน่ง</label><input data-signature-role="position" maxlength="255"></div>
+            </div>
+            <div class="signature-tabs" role="tablist" aria-label="วิธีใส่ลายเซ็น">
+                <button class="button button-secondary button-small" type="button" role="tab" data-signature-mode="upload">อัปโหลด PNG</button>
+                <button class="button button-secondary button-small" type="button" role="tab" data-signature-mode="draw">วาดลายเซ็น</button>
+            </div>
+            <div role="tabpanel" data-signature-panel="upload">
+                <div class="field"><label>ไฟล์ PNG พื้นหลังโปร่งใส</label><input data-signature-role="upload" type="file" accept="image/png,.png"></div>
+            </div>
+            <div class="signature-canvas-shell" role="tabpanel" data-signature-panel="draw" hidden>
+                <canvas class="signature-canvas" data-signature-role="canvas" width="1200" height="400" aria-label="พื้นที่วาดลายเซ็น"></canvas>
+            </div>
+            <div class="signature-preview"><img data-signature-role="preview-image" alt="ตัวอย่างลายเซ็น" hidden></div>
+            <p class="field-help">ระบบใช้ลายเซ็นนี้สร้างภาพเกียรติบัตรและไม่เก็บไฟล์ต้นฉบับ</p>
+            <p data-signature-role="error" class="field-error" role="alert" hidden></p>
+            <button class="button button-ghost button-small" data-signature-role="clear" type="button">ล้างลายเซ็น</button>
+        </fieldset>
+    </template>
+
+    <dialog id="signature-request-dialog" class="modal-dialog" aria-labelledby="signature-request-title">
+        <form id="signature-request-form" class="dialog-form">
+            <div class="dialog-heading">
+                <h2 id="signature-request-title">ใส่ลายเซ็นเพื่อประมวลผล</h2>
+                <button class="icon-button" type="button" data-close-dialog="signature-request-dialog" aria-label="ปิด">×</button>
+            </div>
+            <div id="dialog-signature-host"></div>
+            <div class="form-actions">
+                <button id="signature-request-cancel" class="button button-secondary" type="button">ยกเลิก</button>
+                <button class="button button-primary" type="submit">ใช้ลายเซ็นนี้</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="confirm-dialog" class="modal-dialog modal-dialog-small" aria-labelledby="confirm-title"><form method="dialog" class="dialog-form"><div class="dialog-heading"><div><p class="eyebrow">PLEASE CONFIRM</p><h2 id="confirm-title">ยืนยันการทำรายการ</h2></div></div><p id="confirm-message" class="dialog-message"></p><div id="confirm-input-field" class="field" hidden><label id="confirm-input-label" for="confirm-input">เหตุผล</label><textarea id="confirm-input" maxlength="2000" rows="4"></textarea></div><div class="form-actions"><button id="confirm-cancel" class="button button-secondary" value="cancel">ยกเลิก</button><button id="confirm-accept" class="button button-danger" value="confirm">ยืนยัน</button></div></form></dialog>
+
+
+
+    <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+    <script src="/static/js/api-client.js?v=20260813-5" defer></script>
+    <script src="/static/js/template-layout.js?v=20260907-1" defer></script>
+    <script src="/static/js/signature-pad.js?v=20260906-1" defer></script>
+    <script src="/static/js/organization-admin.js?v=20260823-1" defer></script>
+    <script src="/static/js/dashboard.js?v=20260921-editor-2" defer></script>
+</body>
+</html>
