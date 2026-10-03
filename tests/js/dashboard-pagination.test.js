@@ -5,7 +5,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 function setup(request) {
     const inputs = {"#certificate-search": {value:""}, "#certificate-status":{value:""}, "#batch-search":{value:""}, "#batch-status":{value:""}};
-    const context = {URLSearchParams, setTimeout, clearTimeout, document:{getElementById:()=>({}),querySelector:key=>inputs[key]},window:{api:{request}}};
+    const context = {location: new URL("https://example.test/dashboard"), URLSearchParams, setTimeout, clearTimeout, document:{getElementById:()=>({}),querySelector:key=>inputs[key]},window:{api:{request}}};
     const source=fs.readFileSync(path.join(__dirname,"../../static/js/dashboard.js"),"utf8").replace("    bootstrap();", "    window.testing = {state, fetchCertificates, fetchBatches};");
     vm.runInNewContext(source,context);
     return {...context.window.testing,inputs};

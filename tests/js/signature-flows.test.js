@@ -23,7 +23,7 @@ function dashboard() {
             window.testing = { state, addTemplateElement, singleIssuancePayload, singleIssuanceAttempt, updateIssuanceSignatureEditors };
         `);
     const window = { TemplateLayout: layout };
-    vm.runInNewContext(source, { window, document, crypto: require("node:crypto").webcrypto });
+    vm.runInNewContext(source, { window, document, location: new URL("https://example.test/dashboard"), crypto: require("node:crypto").webcrypto });
     return { ...window.testing, controls, document };
 }
 

@@ -156,10 +156,15 @@ def test_demo_seed_creates_a_renderable_active_certificate(
     assert account is not None
     assert account.role == UserRole.organization
     template = db_session.scalar(
-        select(Template).where(Template.organization_id == organization.id)
+        select(Template).where(
+            Template.organization_id == organization.id,
+            Template.builtin_key == "original",
+        )
     )
     assert template is not None
-    assert template.background_image_path.endswith(".png")
+    from services.builtin_templates import BUILTIN_IMAGE_REFERENCE, BUILTIN_KEY
+    assert template.background_image_path == BUILTIN_IMAGE_REFERENCE
+    assert template.builtin_key == BUILTIN_KEY
     certificate = db_session.scalar(
         select(Certificate).where(Certificate.organization_id == organization.id)
     )
@@ -167,3 +172,32 @@ def test_demo_seed_creates_a_renderable_active_certificate(
     assert certificate.status == CertificateStatus.active
     assert certificate.image_path is not None
     assert Path(certificate.image_path).is_file()
+    from PIL import Image
+    import zxingcpp
+    from services.image_builder import render_certificate
+    from config import settings
+
+    issued_template = db_session.get(Template, certificate.template_id)
+    assert issued_template is not None
+    assert issued_template.organization_id == organization.id
+    with Image.open(issued_template.background_image_path) as background:
+        background.load()
+        assert background.format == "WEBP"
+    with Image.open(certificate.image_path) as issued:
+        issued.load()
+        assert issued.format == "WEBP"
+        assert [code.text for code in zxingcpp.read_barcodes(issued)] == [
+            f"{str(settings.PUBLIC_BASE_URL).rstrip('/')}/?code={certificate.verification_code}"
+        ]
+
+    # Exercise the bundled template resolver, actual encoder and QR, rather
+    # than assuming a storage suffix represents a usable certificate.
+    rendered = tmp_path / "seed-rendered.webp"
+    render_certificate(template, certificate, rendered)
+    with Image.open(rendered) as image:
+        image.load()
+        assert image.format == "WEBP"
+        assert image.width > 0 and image.height > 0
+        assert [code.text for code in zxingcpp.read_barcodes(image)] == [
+            f"{str(settings.PUBLIC_BASE_URL).rstrip('/')}/?code={certificate.verification_code}"
+        ]
