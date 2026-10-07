@@ -1,4 +1,5 @@
 import os
+from contextlib import contextmanager
 
 import pytest
 from sqlalchemy import create_engine
@@ -23,20 +24,41 @@ test_engine = create_engine(TEST_DATABASE_URL, pool_pre_ping=True)
 TestSessionLocal = sessionmaker(bind=test_engine, class_=Session, expire_on_commit=False)
 
 
+@pytest.fixture(scope="session", autouse=True)
+def close_database_pools():
+    yield
+    # Close pooled DBAPI connections before Python's shutdown/garbage collection.
+    from database import engine
+
+    engine.dispose()
+    test_engine.dispose()
+
+
 @pytest.fixture(autouse=True)
 def isolated_template_storage(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "TEMPLATE_DIR", tmp_path)
 
 
-@pytest.fixture
-def db_session():
+@contextmanager
+def isolated_db_session():
     connection = test_engine.connect()
     transaction = connection.begin()
-    session = TestSessionLocal(bind=connection)
+    # Application commit/rollback must affect a SAVEPOINT, not the fixture's
+    # outer transaction. Otherwise rollback ends isolation for later writes.
+    session = TestSessionLocal(bind=connection, join_transaction_mode="create_savepoint")
 
     try:
         yield session
     finally:
-        session.close()
-        transaction.rollback()
-        connection.close()
+        try:
+            session.close()
+            assert transaction.is_active, "Test ended the outer isolation transaction"
+            transaction.rollback()
+        finally:
+            connection.close()
+
+
+@pytest.fixture
+def db_session():
+    with isolated_db_session() as session:
+        yield session

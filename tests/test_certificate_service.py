@@ -276,7 +276,8 @@ def test_render_certificate_draws_all_fields_and_atomically_publishes(
 
     assert result == output
     assert output.exists()
-    assert Image.open(output).size == (600, 400)
+    with Image.open(output) as rendered:
+        assert rendered.size == (600, 400)
     assert captured["url"] == "https://certificates.example/pkru/?code=RENDER123"
     assert drawn_text == [
         "Ada Lovelace",

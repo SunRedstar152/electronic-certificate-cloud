@@ -539,10 +539,9 @@ def test_processing_claims_batch_rows_with_skip_locked(
     )
 
 
-def _committed_batch_context(tmp_path, row_count=4):
-    from tests.conftest import test_engine
-
-    session_factory = sessionmaker(bind=test_engine, expire_on_commit=False)
+def _committed_batch_context(tmp_path, db_session, row_count=4):
+    # Reuse the fixture engine; importing conftest again creates an unmanaged pool.
+    session_factory = sessionmaker(bind=db_session.get_bind().engine, expire_on_commit=False)
     setup = session_factory()
     suffix = uuid4().hex
     background = tmp_path / f"concurrent-{suffix}.png"
@@ -623,7 +622,7 @@ def _cleanup_committed_batch(session_factory, organization_id):
 def test_concurrent_workers_keep_counters_and_certificates_exactly_once(
     db_session, tmp_path
 ):
-    session_factory, organization_id, actor_id, batch_id = _committed_batch_context(tmp_path)
+    session_factory, organization_id, actor_id, batch_id = _committed_batch_context(tmp_path, db_session)
     barrier = threading.Barrier(2)
     errors = []
 
@@ -677,7 +676,7 @@ def test_concurrent_workers_keep_counters_and_certificates_exactly_once(
 
 def test_stale_processing_row_is_reclaimed_after_worker_crash(db_session, tmp_path):
     session_factory, organization_id, actor_id, batch_id = _committed_batch_context(
-        tmp_path, row_count=1
+        tmp_path, db_session, row_count=1
     )
     setup = session_factory()
     try:
@@ -705,7 +704,7 @@ def test_retry_claims_failed_rows_without_recovering_stale_processing(
     db_session, tmp_path
 ):
     session_factory, organization_id, actor_id, batch_id = _committed_batch_context(
-        tmp_path, row_count=2
+        tmp_path, db_session, row_count=2
     )
     setup = session_factory()
     try:
@@ -759,7 +758,7 @@ def test_retry_claims_failed_rows_without_recovering_stale_processing(
 
 def test_fresh_processing_row_is_not_stolen(db_session, tmp_path):
     session_factory, organization_id, actor_id, batch_id = _committed_batch_context(
-        tmp_path, row_count=1
+        tmp_path, db_session, row_count=1
     )
     setup = session_factory()
     try:
@@ -790,7 +789,7 @@ def test_aborted_issuance_transaction_is_rolled_back_before_failure_persistence(
     db_session, tmp_path, monkeypatch
 ):
     session_factory, organization_id, actor_id, batch_id = _committed_batch_context(
-        tmp_path, row_count=1
+        tmp_path, db_session, row_count=1
     )
 
     def abort_transaction(db, _actor, _payload, _idempotency_key):
@@ -816,7 +815,7 @@ def test_failed_issuance_discards_pending_certificate_and_audit_mutations(
     db_session, tmp_path, monkeypatch, failure_kind
 ):
     session_factory, organization_id, actor_id, batch_id = _committed_batch_context(
-        tmp_path, row_count=1
+        tmp_path, db_session, row_count=1
     )
 
     def fail_after_mutation(db, actor, payload, idempotency_key):

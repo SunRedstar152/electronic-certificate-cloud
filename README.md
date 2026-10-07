@@ -1,8 +1,17 @@
 # PKRU Electronic Certificate
 
-## Cloud deployment: Koyeb + Supabase
+## Repository หลักและเว็บที่ใช้งานจริง
 
-Start with the [step-by-step Koyeb + Supabase guide](docs/koyeb-supabase.md). Koyeb builds this repository using `Dockerfile`; Supabase provides PostgreSQL and private file storage. Use `python scripts/start_cloud.py` as the cloud run command. The Docker Compose instructions below are for local/VPS installation with PostgreSQL 18; Supabase PostgreSQL 17.6 was tested separately.
+**ใช้ `SunRedstar152/electronic-certificate-cloud` สาขา `main` เป็นแหล่งโค้ดหลักสำหรับพัฒนาและ deploy ต่อจากนี้**
+
+- เว็บจริง: https://electronic-certificate-cloud.onrender.com/
+- Render เชื่อมกับ `main` ของ repository นี้และเปิด Auto-Deploy
+- Supabase เก็บฐานข้อมูล PostgreSQL และไฟล์แบบ private
+- `SunRedstar152/electronic-certificate` เป็น repository รุ่นก่อนแยกโค้ดขึ้นคลาวด์ เก็บไว้เป็นประวัติ ไม่ต้องอัปเดตทั้งสอง repository คู่กัน
+
+## Cloud deployment: Render + Supabase
+
+Render builds this repository using `Dockerfile`. Use `python scripts/start_cloud.py` as the cloud run command. The earlier [Koyeb + Supabase guide](docs/koyeb-supabase.md) records the original hosting setup; the active deployment now uses Render. The Docker Compose instructions below are for local/VPS installation with PostgreSQL 18; Supabase PostgreSQL 17.6 was tested separately.
 
 
 ระบบออกและตรวจสอบเกียรติบัตรภาษาไทย ใช้ FastAPI และ PostgreSQL รองรับหลายหน่วยงาน ออกเกียรติบัตรรายบุคคล/นำเข้าจาก Excel ตรวจสอบด้วย QR และดาวน์โหลด PNG, JPG, PDF

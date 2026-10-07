@@ -1,3 +1,5 @@
 -r requirements.txt
-httpx==0.28.1
+httpx2==2.13.1
+# TestClient 1.7 uses the supported AnyIO BlockingPortal import.
+starlette==1.7.0
 pytest==9.1.1
