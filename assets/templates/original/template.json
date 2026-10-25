@@ -178,7 +178,7 @@
         },
         "format": {
           "locale": "th-TH",
-          "prefix": "ระหว่าง",
+          "prefix": "ระหว่าง ",
           "suffix": "",
           "pattern": "long",
           "calendar": "buddhist",
