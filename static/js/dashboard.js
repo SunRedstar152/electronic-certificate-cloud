@@ -2155,6 +2155,7 @@
                 content.appendChild(details);
             }
             const actions = node("div", "action-group");
+            actions.appendChild(actionButton("ดูรายชื่อ", () => openBatchRecipients(batch)));
             const template = templateById(batch.template_id);
             const canProcess = template && template.status === "active";
             if (!canProcess && ["validated", "partial", "failed"].includes(batch.status)) {
@@ -2172,6 +2173,63 @@
             list.appendChild(append(node("article", "batch-card"), [content, actions]));
         });
         pagination($("#batches-pagination"), state.batchPage, state.batchTotal || 0, (page) => { state.batchPage = page; loadBatches().catch(apiFailure); });
+    }
+
+    function openBatchRecipients(batch) {
+        const dialog = $("#batch-recipients-dialog");
+        const form = $("#batch-recipients-search-form");
+        const search = $("#batch-recipients-search");
+        const body = $("#batch-recipients-body");
+        const message = $("#batch-recipients-state");
+        const pager = $("#batch-recipients-pagination");
+        const session = {};
+        dialog.recipientSession = session;
+        let requestId = 0;
+        $("#batch-recipients-title").textContent = `รายชื่อกลุ่ม #${batch.id} · ${batch.topic}`;
+        search.value = "";
+        async function load(page = 1) {
+            const current = ++requestId;
+            clear(body);
+            clear(pager);
+            message.textContent = "กำลังโหลดรายชื่อ…";
+            try {
+                const query = new URLSearchParams({ offset: (page - 1) * PAGE_SIZE, limit: PAGE_SIZE, search: search.value.trim() });
+                const result = await window.api.request(`/batches/${batch.id}/recipients?${query}`);
+                if (current !== requestId || dialog.recipientSession !== session || !dialog.open) return;
+                message.textContent = result.total ? `พบ ${result.total} รายชื่อ` : "ไม่พบรายชื่อตามเงื่อนไข";
+                result.items.forEach(item => {
+                    const row = node("tr");
+                    const actions = node("div", "action-group");
+                    let certificateState = "ยังไม่ได้ออกใบ";
+                    if (item.verification_code) {
+                        certificateState = item.certificate_status === "revoked" ? "เพิกถอนแล้ว" : "ใช้งานได้";
+                        const link = node("a", "action-button", "ตรวจสอบ");
+                        link.href = `/?code=${encodeURIComponent(item.verification_code)}`;
+                        link.target = "_blank";
+                        link.rel = "noopener";
+                        actions.appendChild(link);
+                        if (item.certificate_status === "active") {
+                            actions.appendChild(actionButton("ดาวน์โหลด", () => window.api.download(`/certificates/${encodeURIComponent(item.verification_code)}/download`, `certificate-${item.verification_code}.png`).catch(apiFailure)));
+                        }
+                    } else if (item.status === "success") {
+                        certificateState = "ออกสำเร็จแล้ว แต่ใบถูกลบ";
+                    }
+                    const status = append(node("div"), [statusBadge(item.status), node("small", "", item.error_message || certificateState)]);
+                    [node("span", "", item.row_number), node("span", "", item.recipient_name || "—"), node("span", "", item.recipient_reference || "—"), status, actions].forEach(value => {
+                        const cell = node("td"); cell.appendChild(value); row.appendChild(cell);
+                    });
+                    body.appendChild(row);
+                });
+                pagination(pager, page, result.total, load);
+            } catch (error) {
+                if (current !== requestId || dialog.recipientSession !== session || !dialog.open) return;
+                message.textContent = "โหลดรายชื่อไม่สำเร็จ กดค้นหาเพื่อลองใหม่";
+                apiFailure(error);
+            }
+        }
+        form.onsubmit = event => { event.preventDefault(); load(); };
+        dialog.showModal();
+        load();
     }
 
     function requestTransientSignature(template, title) {

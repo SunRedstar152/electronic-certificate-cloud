@@ -278,6 +278,44 @@ def create_batch(client, template, rows, **overrides):
     return response.json()
 
 
+def test_recipient_history_pagination_search_and_scope(organization_client, template, other_user, admin_user):
+    batch = create_batch(organization_client, template, [
+        valid_row(f"REF-{i}", f"Recipient {i}", i + 1) for i in range(12)
+    ])
+    url = f"/batches/{batch['id']}/recipients"
+    page = organization_client.get(url, params={"offset": 10, "limit": 10})
+    assert page.status_code == 200
+    assert page.json()["total"] == 12
+    assert [r["row_number"] for r in page.json()["items"]] == [11, 12]
+    found = organization_client.get(url, params={"search": "REF-11"}).json()
+    assert found["total"] == 1
+    assert found["items"][0]["recipient_name"] == "Recipient 11"
+    assert organization_client.get(url, params={"search": "%"}).json()["total"] == 0
+    assert organization_client.get(url, params={"limit": 101}).status_code == 422
+    assert organization_client.get(url, headers=authorization(other_user)).status_code == 404
+    assert organization_client.get(url, headers=authorization(admin_user)).status_code == 403
+    organization_client.headers.clear()
+    assert organization_client.get(url).status_code == 401
+
+
+def test_recipient_history_shows_current_revocation_and_deleted_certificate(organization_client, organization_user, template, db_session):
+    from services.certificates import revoke_certificate, delete_certificate
+    batch = create_batch(organization_client, template, [valid_row()])
+    assert organization_client.post(f"/batches/{batch['id']}/process").status_code == 200
+    url = f"/batches/{batch['id']}/recipients"
+    item = organization_client.get(url).json()["items"][0]
+    assert item["status"] == "success"
+    assert item["certificate_status"] == "active"
+    code = item["verification_code"]
+    revoke_certificate(db_session, organization_user, code, "Incorrect recipient")
+    assert organization_client.get(url).json()["items"][0]["certificate_status"] == "revoked"
+    delete_certificate(db_session, organization_user, code)
+    item = organization_client.get(url).json()["items"][0]
+    assert item["recipient_name"] == "Ada Lovelace"
+    assert item["status"] == "success"
+    assert item["verification_code"] is None
+
+
 def xlsx_file(rows):
     from openpyxl import Workbook
 

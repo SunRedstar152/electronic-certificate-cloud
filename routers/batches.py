@@ -4,15 +4,16 @@ from dataclasses import asdict
 import json
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, UploadFile, status, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
+from sqlalchemy import select, func, or_
 
 from auth import require_organization_user
 from core.errors import api_error
 from database import get_db
-from models import User
+from models import User, Batch, BatchRow, Certificate
 from schemas import BatchCreate, BatchProcessRequest, BatchResponse
 from services.archive_builder import build_batch_archive, iter_archive
 from services.batch_service import (
@@ -186,6 +187,43 @@ def get_batch(
         return get_owned_batch(db, current_user, batch_id)
     except BatchNotFoundError:
         raise _not_found()
+
+
+@router.get("/{batch_id}/recipients")
+def batch_recipients(
+    batch_id: int,
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=10, ge=1, le=100),
+    search: str = Query(default="", max_length=255),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_organization_user),
+):
+    batch = db.scalar(select(Batch).where(
+        Batch.id == batch_id, Batch.organization_id == current_user.organization_id,
+    ))
+    if batch is None:
+        raise _not_found()
+    conditions = [BatchRow.batch_id == batch.id]
+    if search.strip():
+        conditions.append(or_(
+            BatchRow.recipient_name.icontains(search.strip(), autoescape=True),
+            BatchRow.recipient_reference.icontains(search.strip(), autoescape=True),
+        ))
+    total = db.scalar(select(func.count()).select_from(BatchRow).where(*conditions))
+    rows = db.execute(select(BatchRow, Certificate).outerjoin(Certificate,
+        (Certificate.id == BatchRow.certificate_id) &
+        (Certificate.batch_id == batch.id) &
+        (Certificate.organization_id == current_user.organization_id),
+    ).where(*conditions).order_by(BatchRow.row_number, BatchRow.id).offset(offset).limit(limit))
+    return {"total": total, "items": [{
+        "row_number": row.row_number,
+        "recipient_name": row.recipient_name,
+        "recipient_reference": row.recipient_reference,
+        "status": row.status,
+        "error_message": row.error_message,
+        "verification_code": certificate.verification_code if certificate else None,
+        "certificate_status": certificate.status if certificate else None,
+    } for row, certificate in rows]}
 
 
 def _processed_batch(db: Session, current_user: User, batch_id: int):

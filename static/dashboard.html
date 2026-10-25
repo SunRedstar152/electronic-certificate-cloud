@@ -371,11 +371,23 @@
 
 
 
+    <dialog id="batch-recipients-dialog" class="modal-dialog modal-dialog-wide" aria-labelledby="batch-recipients-title">
+        <div class="dialog-form">
+            <div class="dialog-heading"><h2 id="batch-recipients-title">รายชื่อในกลุ่ม</h2><button type="button" class="icon-button" data-close-dialog="batch-recipients-dialog" aria-label="ปิด">×</button></div>
+            <form id="batch-recipients-search-form" class="form-actions">
+                <div class="field"><label for="batch-recipients-search">ค้นหาชื่อหรือรหัสผู้รับ</label><input id="batch-recipients-search" type="search" maxlength="255" placeholder="กรอกชื่อหรือรหัสผู้รับ"></div>
+                <button type="submit" class="button button-secondary">ค้นหา</button>
+            </form>
+            <p id="batch-recipients-state" role="status"></p>
+            <div class="table-shell"><table class="data-table"><thead><tr><th>แถว</th><th>ชื่อผู้รับ</th><th>รหัสผู้รับ</th><th>สถานะ</th><th>เกียรติบัตร</th></tr></thead><tbody id="batch-recipients-body"></tbody></table></div>
+            <div id="batch-recipients-pagination" class="pagination"></div>
+        </div>
+    </dialog>
     <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
     <script src="/static/js/api-client.js?v=20260813-5" defer></script>
     <script src="/static/js/template-layout.js?v=20260907-1" defer></script>
     <script src="/static/js/signature-pad.js?v=20260906-1" defer></script>
     <script src="/static/js/organization-admin.js?v=20260823-1" defer></script>
-    <script src="/static/js/dashboard.js?v=20261025-revoked-delete" defer></script>
+    <script src="/static/js/dashboard.js?v=20261025-batch-recipients" defer></script>
 </body>
 </html>
