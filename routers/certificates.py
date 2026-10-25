@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Query, status
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, Response
 from starlette.background import BackgroundTask
 from services.certificate_images import is_webp, png_export
 from config import settings
@@ -19,6 +19,8 @@ from schemas import (
     CertificateRevokeRequest,
 )
 from services.certificates import (
+    CertificateNotRevokedError,
+    delete_certificate as delete_owned_certificate,
     CertificateFieldInvalidError,
     CertificateFontUnavailableError,
     CertificateNotFoundError,
@@ -39,6 +41,24 @@ from services.signatures import SignatureError
 
 
 router = APIRouter(prefix="/certificates", tags=["Certificates"])
+
+
+@router.delete("/{code}", status_code=204)
+def delete_certificate(
+    code: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_organization_user),
+):
+    from services.object_storage import StorageUnavailableError
+    try:
+        delete_owned_certificate(db, current_user, code)
+    except CertificateNotFoundError:
+        raise _not_found()
+    except CertificateNotRevokedError:
+        raise api_error(409, "CERTIFICATE_NOT_REVOKED", "กรุณาเพิกถอนเกียรติบัตรก่อนลบ")
+    except (StorageUnavailableError, OSError, ValueError):
+        raise api_error(503, "CERTIFICATE_DELETE_FAILED", "ลบไฟล์ไม่สำเร็จ กรุณาลองอีกครั้ง")
+    return Response(status_code=204)
 
 
 _FIELD_ERROR_MESSAGES = {

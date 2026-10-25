@@ -14,6 +14,7 @@ from services.object_storage import reference, discard_file
 
 from config import settings
 from models import (
+    AuditLog,
     Activity,
     ActivityStatus,
     Certificate,
@@ -61,6 +62,10 @@ class CertificateNotFoundError(CertificateServiceError):
 
 
 class RevocationReasonError(CertificateServiceError):
+    pass
+
+
+class CertificateNotRevokedError(CertificateServiceError):
     pass
 
 
@@ -531,6 +536,13 @@ def create_certificate(
         try:
             if normalized_key is not None:
                 _acquire_idempotency_lock(db, organization_id, normalized_key)
+                deleted = db.scalar(select(AuditLog.id).where(
+                    AuditLog.organization_id == organization_id,
+                    AuditLog.action == "certificate.delete",
+                    AuditLog.details["idempotency_digest"].astext == hashlib.sha256(normalized_key.encode()).hexdigest(),
+                ).limit(1))
+                if deleted is not None:
+                    raise IdempotencyKeyError("This issuance was permanently deleted; use a new key.")
                 existing = _certificate_for_idempotency_key(
                     db, organization_id, normalized_key
                 )
@@ -706,7 +718,56 @@ def revoke_certificate(
     return certificate
 
 
+def delete_certificate(db: Session, actor: User, code: str) -> None:
+    """Delete only a revoked, owned certificate; retain audit and batch history.
+
+    Storage removal happens first: failure leaves a retryable revoked record.
+    If the DB commit fails afterwards, retry tolerates an already missing image.
+    """
+    from services.object_storage import PREFIX, reference_path
+    from services.storage_paths import resolve_certificate_file, StoredFileUnavailableError
+
+    try:
+        certificate = db.scalar(select(Certificate).where(
+            Certificate.organization_id == _organization_id(actor),
+            Certificate.verification_code == code.strip().upper(),
+        ).with_for_update())
+        if certificate is None:
+            raise CertificateNotFoundError("Certificate not found.")
+        if certificate.status != CertificateStatus.revoked:
+            raise CertificateNotRevokedError("Revoke the certificate before deleting it.")
+        if certificate.idempotency_key:
+            _acquire_idempotency_lock(db, certificate.organization_id, certificate.idempotency_key)
+        if certificate.image_path:
+            if certificate.image_path.startswith(PREFIX):
+                path = reference_path(certificate.image_path, settings.CERTIFICATE_DIR)
+            else:
+                try:
+                    path = resolve_certificate_file(certificate.image_path)
+                except StoredFileUnavailableError as error:
+                    if error.reason != "missing":
+                        raise
+                    path = None
+            if path is not None:
+                discard_file(path, strict=True)
+        record_audit(db, actor, "certificate.delete", "certificate", certificate.id, {
+            "verification_code": certificate.verification_code,
+            "batch_id": certificate.batch_id,
+            "idempotency_digest": hashlib.sha256(certificate.idempotency_key.encode()).hexdigest() if certificate.idempotency_key else None,
+        })
+        if certificate.batch_row is not None:
+            certificate.batch_row.certificate = None
+            db.flush()
+        db.delete(certificate)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+
 __all__ = [
+    "delete_certificate",
+    "CertificateNotRevokedError",
     "CertificateNotFoundError",
     "CertificateQrInvalidError",
     "CertificateServiceError",

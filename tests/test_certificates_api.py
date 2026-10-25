@@ -40,6 +40,83 @@ def authorization(user):
     return {"Authorization": f"Bearer {create_access_token(user)}"}
 
 
+def test_delete_requires_revocation_and_removes_file_and_record(organization_client, template, db_session):
+    response = organization_client.post("/certificates", json=certificate_payload(template), headers={"Idempotency-Key": "delete-test"})
+    assert response.status_code == 201
+    code = response.json()["verification_code"]
+    certificate = db_session.scalar(select(Certificate).where(Certificate.verification_code == code))
+    image = Path(certificate.image_path)
+    assert image.is_file()
+    assert organization_client.delete(f"/certificates/{code}").status_code == 409
+    assert image.is_file()
+    assert organization_client.post(f"/certificates/{code}/revoke", json={"reason": "Incorrect recipient"}).status_code == 200
+    assert organization_client.delete(f"/certificates/{code}").status_code == 204
+    assert not image.exists()
+    assert db_session.scalar(select(Certificate).where(Certificate.verification_code == code)) is None
+    assert db_session.scalar(select(AuditLog).where(AuditLog.action == "certificate.delete")) is not None
+    assert organization_client.delete(f"/certificates/{code}").status_code == 404
+    retry = organization_client.post("/certificates", json=certificate_payload(template), headers={"Idempotency-Key": "delete-test"})
+    assert retry.status_code != 201
+    assert db_session.scalar(select(Certificate).where(Certificate.verification_code == code)) is None
+
+
+def test_delete_denies_anonymous_and_other_organization(client, organization_client, organization_user, other_user, template, db_session):
+    response = organization_client.post("/certificates", json=certificate_payload(template))
+    code = response.json()["verification_code"]
+    organization_client.post(f"/certificates/{code}/revoke", json={"reason": "Incorrect recipient"})
+    client.headers.clear()
+    assert client.delete(f"/certificates/{code}").status_code == 401
+    assert client.delete(f"/certificates/{code}", headers=authorization(other_user)).status_code == 404
+    assert db_session.scalar(select(Certificate).where(Certificate.verification_code == code)) is not None
+
+
+def test_delete_storage_failure_can_be_retried(organization_client, template, db_session, monkeypatch):
+    import services.certificates as service
+    from services.object_storage import StorageUnavailableError
+    code = organization_client.post("/certificates", json=certificate_payload(template)).json()["verification_code"]
+    organization_client.post(f"/certificates/{code}/revoke", json={"reason": "Incorrect recipient"})
+    original = service.discard_file
+    def fail(*args, **kwargs):
+        raise StorageUnavailableError("offline")
+    monkeypatch.setattr(service, "discard_file", fail)
+    assert organization_client.delete(f"/certificates/{code}").status_code == 503
+    assert db_session.scalar(select(Certificate).where(Certificate.verification_code == code)).status == CertificateStatus.revoked
+    monkeypatch.setattr(service, "discard_file", original)
+    assert organization_client.delete(f"/certificates/{code}").status_code == 204
+
+
+def test_delete_preserves_successful_batch_history(organization_client, organization_user, template, db_session):
+    from models import Batch, BatchRow, BatchStatus
+    code = organization_client.post("/certificates", json=certificate_payload(template)).json()["verification_code"]
+    certificate = db_session.scalar(select(Certificate).where(Certificate.verification_code == code))
+    batch = Batch(organization_id=organization_user.organization_id, template_id=template.id,
+                  topic="Batch history", issue_date=date(2026, 10, 25), source_type="manual",
+                  created_by_id=organization_user.id, status=BatchStatus.completed,
+                  total_count=1, success_count=1)
+    db_session.add(batch)
+    db_session.flush()
+    certificate.batch_id = batch.id
+    db_session.flush()
+    row = BatchRow(batch_id=batch.id, row_number=1, status="success", certificate_id=certificate.id)
+    db_session.add(row)
+    db_session.commit()
+    organization_client.post(f"/certificates/{code}/revoke", json={"reason": "Incorrect recipient"})
+    assert organization_client.delete(f"/certificates/{code}").status_code == 204
+    db_session.refresh(row)
+    db_session.refresh(batch)
+    assert row.certificate_id is None
+    assert row.status == "success"
+    assert batch.success_count == 1
+
+
+def test_delete_missing_image_is_retryable(organization_client, template, db_session):
+    code = organization_client.post("/certificates", json=certificate_payload(template)).json()["verification_code"]
+    certificate = db_session.scalar(select(Certificate).where(Certificate.verification_code == code))
+    Path(certificate.image_path).unlink()
+    organization_client.post(f"/certificates/{code}/revoke", json={"reason": "Incorrect recipient"})
+    assert organization_client.delete(f"/certificates/{code}").status_code == 204
+
+
 @pytest.fixture
 def organization(db_session):
     value = Organization(name="Certificate API Organization", code="CERT-API")

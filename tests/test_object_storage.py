@@ -53,6 +53,44 @@ def client(db_session):
     return TestClient(app)
 
 
+def test_revoked_deletion_removes_remote_object_without_downloading(client, db_session, organization_user, template, bucket):
+    source = Path(template.background_image_path)
+    destination = settings.TEMPLATE_DIR / 'background.png'
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_bytes(source.read_bytes())
+    template.background_image_path = str(destination)
+    db_session.flush()
+    client.headers.update(authorization(organization_user))
+    response = client.post('/certificates', json=certificate_payload(template))
+    assert response.status_code == 201
+    code = response.json()['verification_code']
+    ref = response.json()['image_path']
+    path = store.reference_path(ref, settings.CERTIFICATE_DIR)
+    path.unlink()
+    objects, calls = bucket
+    key = ref[len(store.PREFIX):]
+    assert key in objects
+    assert client.post(f'/certificates/{code}/revoke', json={'reason': 'Incorrect recipient'}).status_code == 200
+    calls.clear()
+    assert client.delete(f'/certificates/{code}').status_code == 204
+    assert key not in objects
+    assert not path.exists()
+    assert not any(method == 'GET' for method, route in calls)
+    assert db_session.scalar(select(Certificate).where(Certificate.verification_code == code)) is None
+
+
+def test_strict_storage_cleanup_does_not_hide_remote_failure(bucket, monkeypatch):
+    path = settings.CERTIFICATE_DIR / 'revoked.webp'
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(b'cached image')
+    def offline(*args, **kwargs):
+        raise store.StorageUnavailableError('offline')
+    monkeypatch.setattr(store, '_request', offline)
+    with pytest.raises(store.StorageUnavailableError):
+        store.discard_file(path, strict=True)
+    assert path.exists()
+
+
 def test_private_storage_survives_local_cache_loss_and_enforces_access(client,db_session,organization_user,other_user,template,bucket):
     source=Path(template.background_image_path)
     destination=settings.TEMPLATE_DIR/'background.png'

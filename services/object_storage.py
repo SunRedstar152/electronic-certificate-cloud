@@ -191,7 +191,7 @@ def materialize(value: str, configured_root: Path) -> Path:
                 temporary.unlink(missing_ok=True)
 
 
-def discard_file(path: Path):
+def discard_file(path: Path, *, strict: bool = False):
     """Clean a successfully published file after a confirmed database rollback."""
     if settings.STORAGE_BACKEND == "supabase":
         key = object_key(path)
@@ -202,6 +202,8 @@ def discard_file(path: Path):
         except StorageObjectMissingError:
             pass
         except StorageUnavailableError:
+            if strict:
+                raise
             # Never hide the original DB failure; an orphan can be cleaned after recovery.
             logger.warning("Could not remove an unreferenced storage object after rollback")
     path.unlink(missing_ok=True)

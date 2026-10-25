@@ -2283,6 +2283,9 @@
                 actions.appendChild(actionButton("ดาวน์โหลด", () => window.api.download(`/certificates/${encodeURIComponent(certificate.verification_code)}/download`, `certificate-${certificate.verification_code}.png`).catch(apiFailure)));
                 actions.appendChild(actionButton("เพิกถอน", () => revokeCertificate(certificate), true));
             }
+            if (certificate.status === "revoked") {
+                actions.appendChild(actionButton("ลบถาวร", () => deleteCertificate(certificate), true));
+            }
             const publicLink = node("a", "action-button", "ตรวจสอบ");
             publicLink.href = `/?code=${encodeURIComponent(certificate.verification_code)}`;
             publicLink.target = "_blank";
@@ -2296,6 +2299,19 @@
             tableBody.appendChild(row);
         });
         pagination($("#certificates-pagination"), state.certificatePage, state.certificateTotal || 0, (page) => { state.certificatePage = page; loadCertificates().catch(apiFailure); });
+    }
+
+    async function deleteCertificate(certificate) {
+        const answer = await requestConfirmation({ title: "ลบเกียรติบัตรถาวร", message: `ลบเกียรติบัตรของ “${certificate.recipient_name}” และไฟล์ภาพอย่างถาวร ลิงก์และ QR เดิมจะไม่พบข้อมูล กู้คืนไม่ได้ โดยยังเก็บประวัติการดำเนินการและชุดออกใบไว้`, actionLabel: "ลบถาวร", danger: true });
+        if (!answer.confirmed) return;
+        try {
+            await window.api.request(`/certificates/${encodeURIComponent(certificate.verification_code)}`, { method: "DELETE" });
+            toast("ลบเกียรติบัตรแล้ว", "success");
+            state.certificatePage = 1;
+            await loadCertificates();
+        } catch (error) {
+            apiFailure(error);
+        }
     }
 
     async function revokeCertificate(certificate) {
