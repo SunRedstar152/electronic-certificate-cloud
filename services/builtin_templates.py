@@ -59,5 +59,5 @@ def ensure_original_template(db: Session, organization_id: int) -> Template:
 
 
 def ensure_all_original_templates(db: Session) -> None:
-    for organization_id in db.scalars(select(Organization.id)):
+    for organization_id in db.scalars(select(Organization.id).where(Organization.deleted_at.is_(None))):
         ensure_original_template(db, organization_id)

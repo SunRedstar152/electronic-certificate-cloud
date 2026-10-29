@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -23,15 +25,26 @@ def _organization_not_found():
     return api_error(404, "ORG_NOT_FOUND", "Organization not found.")
 
 
+def _organization_for_update(db: Session, organization_id: int) -> Organization:
+    organization = db.scalar(select(Organization).where(
+        Organization.id == organization_id, Organization.deleted_at.is_(None)
+    ).with_for_update().execution_options(populate_existing=True))
+    if organization is None:
+        raise _organization_not_found()
+    return organization
+
+
 def _organization_user_or_404(
     db: Session, organization_id: int, user_id: int
 ) -> User:
+    _organization_for_update(db, organization_id)
     account = db.scalar(
         select(User).where(
+            User.deleted_at.is_(None),
             User.id == user_id,
             User.organization_id == organization_id,
             User.role == UserRole.organization,
-        )
+        ).execution_options(populate_existing=True)
     )
     if account is None:
         raise api_error(404, "ACCOUNT_NOT_FOUND", "Personnel account not found.")
@@ -130,9 +143,7 @@ def update_organization(
     data: OrganizationUpdate,
     actor: User,
 ) -> Organization:
-    organization = db.get(Organization, organization_id)
-    if organization is None:
-        raise _organization_not_found()
+    organization = _organization_for_update(db, organization_id)
 
     values = data.model_dump(exclude_unset=True)
     if any(
@@ -217,9 +228,7 @@ def create_organization_user(
     actor: User,
     correlation_id: str | None = None,
 ) -> User:
-    organization = db.get(Organization, organization_id)
-    if organization is None:
-        raise _organization_not_found()
+    organization = _organization_for_update(db, organization_id)
 
     account = User(
         username=data.username,
@@ -275,6 +284,7 @@ def set_organization_user_status(
         account = db.scalar(
             select(User)
             .where(
+                User.deleted_at.is_(None),
                 User.id == user_id,
                 User.organization_id == organization_id,
                 User.role == UserRole.organization,
@@ -292,6 +302,7 @@ def set_organization_user_status(
         account = db.scalar(
             select(User)
             .where(
+                User.deleted_at.is_(None),
                 User.id == user_id,
                 User.organization_id == organization_id,
                 User.role == UserRole.organization,
@@ -339,3 +350,32 @@ def reset_organization_user_password(
     audit.organization_id = organization_id
     audit.correlation_id = correlation_id
     return account
+
+
+def delete_organization_user(db: Session, organization_id: int, user_id: int, actor: User) -> None:
+    account = _organization_user_or_404(db, organization_id, user_id)
+    if account.is_active:
+        raise api_error(409, "ACCOUNT_STILL_ACTIVE", "Deactivate the account before deleting it.")
+    account.deleted_at = datetime.now(timezone.utc)
+    audit = record_audit(db, actor, "personnel.delete", "account", account.id,
+                         {"username": account.username})
+    audit.organization_id = organization_id
+    db.flush()
+
+
+def delete_organization(db: Session, organization_id: int, actor: User) -> None:
+    organization = _organization_for_update(db, organization_id)
+    if organization.status != RecordStatus.inactive:
+        raise api_error(409, "ORG_STILL_ACTIVE", "Deactivate the organization before deleting it.")
+    deleted_at = datetime.now(timezone.utc)
+    organization.deleted_at = deleted_at
+    accounts = list(db.scalars(select(User).where(
+        User.organization_id == organization_id, User.deleted_at.is_(None)
+    ).order_by(User.id).with_for_update()))
+    for account in accounts:
+        account.is_active = False
+        account.deleted_at = deleted_at
+    audit = record_audit(db, actor, "organization.delete", "organization", organization.id,
+                         {"name": organization.name, "personnel_count": len(accounts)})
+    audit.organization_id = organization_id
+    db.flush()

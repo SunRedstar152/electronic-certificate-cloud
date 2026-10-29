@@ -378,6 +378,7 @@
             actions.appendChild(actionButton("จัดการบุคลากร", () => openPersonnelDialog(organization).catch(apiFailure)));
             const deactivating = organization.status === "active";
             actions.appendChild(actionButton(deactivating ? "ปิดใช้งาน" : "เปิดใช้งาน", () => toggleOrganization(item), deactivating));
+            if (!deactivating) actions.appendChild(actionButton("ลบหน่วยงาน", () => deleteOrganization(organization), true));
             [identity, personnel, contact, statusBadge(organization.status), actions].forEach((content) => {
                 const cell = node("td");
                 cell.appendChild(content);
@@ -513,6 +514,36 @@
         }
     }
 
+    async function deleteOrganization(organization) {
+        const answer = await requestConfirmation({
+            title: "ลบหน่วยงาน",
+            message: `ลบ ${organization.name} และบัญชีบุคลากรทั้งหมดออกจากหน้าจัดการถาวร เกียรติบัตรและประวัติเดิมยังคงอยู่ ชื่อเดิมจะไม่สามารถนำกลับมาใช้ใหม่ได้`,
+            actionLabel: "ลบหน่วยงาน", danger: true,
+        });
+        if (!answer.confirmed) return;
+        try {
+            await window.api.request(`/admin/organizations/${organization.id}`, { method: "DELETE" });
+            toast("ลบหน่วยงานแล้ว", "success");
+            await loadOrganizations();
+            await loadOrganizationOptions();
+        } catch (error) { apiFailure(error); }
+    }
+
+    async function deletePersonnel(organizationId, account) {
+        const answer = await requestConfirmation({
+            title: "ลบผู้ใช้งาน",
+            message: `ลบ ${account.username} ออกจากหน้าจัดการถาวร ประวัติการออกใบเดิมยังคงอยู่ ชื่อผู้ใช้นี้จะไม่สามารถนำกลับมาใช้ใหม่ได้`,
+            actionLabel: "ลบผู้ใช้งาน", danger: true,
+        });
+        if (!answer.confirmed) return;
+        try {
+            await window.api.request(`${window.OrganizationAdmin.personnelPath(organizationId)}/${account.id}`, { method: "DELETE" });
+            toast("ลบผู้ใช้งานแล้ว", "success");
+            await loadPersonnel(organizationId);
+            await loadOrganizations();
+        } catch (error) { apiFailure(error); }
+    }
+
     async function loadPersonnel(organizationId) {
         const tableBody = $("#personnel-table-body");
         const tableState = $("#personnel-state");
@@ -533,6 +564,7 @@
             actions.appendChild(actionButton("รหัสผ่าน", () => openPasswordDialog(organizationId, account)));
             const deactivating = account.is_active;
             actions.appendChild(actionButton(deactivating ? "ปิดใช้งาน" : "เปิดใช้งาน", () => togglePersonnel(account), deactivating));
+            if (!account.is_active) actions.appendChild(actionButton("ลบผู้ใช้งาน", () => deletePersonnel(organizationId, account), true));
             [node("span", "", account.username), statusBadge(account.is_active ? "active" : "inactive"), actions].forEach((content) => {
                 const cell = node("td");
                 cell.appendChild(content);

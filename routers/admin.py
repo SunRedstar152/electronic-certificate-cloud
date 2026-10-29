@@ -30,6 +30,8 @@ from schemas import (
 )
 from services.organization_identity import normalize_organization_name
 from services.accounts import (
+    delete_organization,
+    delete_organization_user,
     create_organization_account,
     create_organization_user,
     reset_organization_user_password,
@@ -108,7 +110,7 @@ def list_organizations(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
-    conditions = []
+    conditions = [Organization.deleted_at.is_(None)]
     normalized_search = normalize_organization_name(search) if search else ""
     if normalized_search:
         pattern = f"%{normalized_search}%"
@@ -117,6 +119,7 @@ def list_organizations(
             .where(
                 User.organization_id == Organization.id,
                 User.role == UserRole.organization,
+                User.deleted_at.is_(None),
                 User.username.ilike(pattern),
             )
             .correlate(Organization)
@@ -137,6 +140,7 @@ def list_organizations(
         .where(
             User.organization_id == Organization.id,
             User.role == UserRole.organization,
+            User.deleted_at.is_(None),
         )
         .correlate(Organization)
         .scalar_subquery()
@@ -146,6 +150,7 @@ def list_organizations(
         .where(
             User.organization_id == Organization.id,
             User.role == UserRole.organization,
+            User.deleted_at.is_(None),
             User.is_active.is_(True),
         )
         .correlate(Organization)
@@ -191,7 +196,7 @@ def list_organization_users(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
-    if db.get(Organization, organization_id) is None:
+    if db.scalar(select(Organization.id).where(Organization.id == organization_id, Organization.deleted_at.is_(None))) is None:
         raise api_error(404, "ORG_NOT_FOUND", "Organization not found.")
     items = list(
         db.scalars(
@@ -199,6 +204,7 @@ def list_organization_users(
             .where(
                 User.organization_id == organization_id,
                 User.role == UserRole.organization,
+                User.deleted_at.is_(None),
             )
             .order_by(func.lower(User.username), User.id)
         )
@@ -277,7 +283,7 @@ def get_stats(
 ):
     organization_counts = dict(
         db.execute(
-            select(Organization.status, func.count(Organization.id)).group_by(
+            select(Organization.status, func.count(Organization.id)).where(Organization.deleted_at.is_(None)).group_by(
                 Organization.status
             )
         ).all()
@@ -285,7 +291,7 @@ def get_stats(
     account_counts = dict(
         db.execute(
             select(User.is_active, func.count(User.id))
-            .where(User.role == UserRole.organization)
+            .where(User.role == UserRole.organization, User.deleted_at.is_(None))
             .group_by(User.is_active)
         ).all()
     )
@@ -378,3 +384,21 @@ def list_audit_logs(
         "page_size": size,
         "total": total or 0,
     }
+
+
+@router.delete("/organizations/{organization_id}", status_code=204)
+def delete_organization_route(
+    organization_id: int, db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    delete_organization(db, organization_id, current_admin)
+    db.commit()
+
+
+@router.delete("/organizations/{organization_id}/users/{user_id}", status_code=204)
+def delete_organization_user_route(
+    organization_id: int, user_id: int, db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    delete_organization_user(db, organization_id, user_id, current_admin)
+    db.commit()

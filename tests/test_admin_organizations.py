@@ -1448,3 +1448,85 @@ def test_admin_filters_paginated_audit_logs(
     assert "code" not in body["items"][0]["organization"]
     assert "EXISTING" not in response.text
     assert "password" not in response.text.lower()
+
+
+def test_delete_personnel_requires_inactive_and_preserves_history(admin_client, db_session, organization_user, successor_user):
+    from auth import user_has_system_access
+    user = organization_user
+    path = f"/admin/organizations/{user.organization_id}/users/{user.id}"
+    assert admin_client.delete(path).status_code == 409
+    assert admin_client.patch(path, json={"is_active": False}).status_code == 200
+    assert admin_client.delete(path).status_code == 204
+    db_session.refresh(user)
+    assert user.deleted_at is not None
+    assert not user_has_system_access(user)
+    assert admin_client.delete(path).status_code == 404
+    assert admin_client.patch(path, json={"is_active": True}).status_code == 404
+    assert admin_client.post(path + "/reset-password", json={"password": "NewPassword123!"}).status_code == 404
+    items = admin_client.get(f"/admin/organizations/{user.organization_id}/users").json()["items"]
+    assert [item["id"] for item in items] == [successor_user.id]
+    assert db_session.scalar(select(AuditLog.id).where(AuditLog.action == "personnel.delete", AuditLog.target_id == str(user.id)))
+    assert admin_client.get("/admin/stats").json()["accounts"]["total"] == 1
+
+
+def test_delete_organization_hides_children_and_cannot_restore(admin_client, db_session, organization_user):
+    from auth import user_has_system_access
+    user = organization_user
+    org = user.organization
+    path = f"/admin/organizations/{org.id}"
+    assert admin_client.delete(path).status_code == 409
+    assert admin_client.patch(path, json={"status": "inactive"}).status_code == 200
+    assert admin_client.delete(path).status_code == 204
+    db_session.refresh(org)
+    db_session.refresh(user)
+    assert org.deleted_at is not None and user.deleted_at is not None
+    assert not user_has_system_access(user)
+    assert admin_client.get("/admin/organizations").json()["total"] == 0
+    assert admin_client.get(path + "/users").status_code == 404
+    assert admin_client.patch(path, json={"status": "active"}).status_code == 404
+    assert admin_client.post(path + "/users", json={"username": "newuser", "password": "NewPassword123!"}).status_code == 404
+    stats = admin_client.get("/admin/stats").json()
+    assert stats["organizations"]["total"] == stats["accounts"]["total"] == 0
+    assert db_session.scalar(select(AuditLog.id).where(AuditLog.action == "organization.delete"))
+
+
+def test_delete_requires_admin_and_matching_organization(client, db_session, organization_user, other_organization_user, admin_user):
+    user = organization_user
+    path = f"/admin/organizations/{user.organization_id}"
+    for target in (path, path + f"/users/{user.id}"):
+        assert client.delete(target).status_code == 401
+        assert client.delete(target, headers=authorization(user)).status_code == 403
+    wrong = path + f"/users/{other_organization_user.id}"
+    assert client.delete(wrong, headers=authorization(admin_user)).status_code == 404
+
+
+@pytest.mark.parametrize("delete_parent", [False, True])
+def test_deletion_retains_certificate_and_image(admin_client, db_session, organization_user, tmp_path, delete_parent):
+    from datetime import date
+    from models import CertificateStatus
+    from services.builtin_templates import ensure_original_template
+    user = organization_user
+    template = ensure_original_template(db_session, user.organization_id)
+    image = tmp_path / "retained.webp"
+    image.write_bytes(b"existing certificate")
+    certificate = Certificate(
+        organization_id=user.organization_id, template_id=template.id,
+        created_by_id=user.id, verification_code="retain1234567890",
+        recipient_reference="reference", recipient_name="Recipient", topic="Topic",
+        issue_date=date.today(), image_path=str(image),
+    )
+    db_session.add(certificate)
+    db_session.flush()
+    path = f"/admin/organizations/{user.organization_id}"
+    if delete_parent:
+        assert admin_client.patch(path, json={"status": "inactive"}).status_code == 200
+    else:
+        user.is_active = False
+        db_session.flush()
+        path += f"/users/{user.id}"
+    assert admin_client.delete(path).status_code == 204
+    db_session.refresh(certificate)
+    assert certificate.status == CertificateStatus.active
+    assert certificate.created_by.id == user.id
+    assert certificate.organization.id == user.organization_id
+    assert image.read_bytes() == b"existing certificate"

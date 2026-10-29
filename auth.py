@@ -31,12 +31,13 @@ def get_password_hash(password: str) -> str:
 
 def user_has_system_access(user: User) -> bool:
     try:
-        if not user.is_active:
+        if not user.is_active or user.deleted_at is not None:
             return False
         if user.role == UserRole.organization:
             return (
                 user.organization is not None
                 and user.organization.status == RecordStatus.active
+                and user.organization.deleted_at is None
             )
         return True
     except DetachedInstanceError:

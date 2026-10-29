@@ -4,7 +4,7 @@
 -- For an EMPTY database only. Contains schema only, no users or demo data.
 -- The Compose migrate service imports this file when the public schema is empty.
 -- Existing databases: use the Compose migrate service; do not import this again.
--- Generated from models.py; schema revision: b6c7d8e9f0a1
+-- Generated from models.py; schema revision: c8d9e0f1a2b3
 -- Regenerate: python scripts/export_schema.py
 
 BEGIN;
@@ -23,6 +23,7 @@ CREATE TYPE certificate_recipient_type AS ENUM ('INTERNAL', 'EXTERNAL');
 CREATE TYPE certificate_status AS ENUM ('active', 'revoked');
 
 CREATE TABLE organizations (
+	deleted_at TIMESTAMP WITH TIME ZONE,
 	id SERIAL NOT NULL,
 	name VARCHAR(255) NOT NULL,
 	code VARCHAR(32) NOT NULL,
@@ -49,6 +50,7 @@ CREATE TABLE login_attempt_buckets (
 CREATE INDEX ix_login_attempt_buckets_expires_at ON login_attempt_buckets (expires_at);
 
 CREATE TABLE users (
+	deleted_at TIMESTAMP WITH TIME ZONE,
 	id SERIAL NOT NULL,
 	username VARCHAR(100) NOT NULL,
 	password_hash VARCHAR(255) NOT NULL,
@@ -319,6 +321,6 @@ CREATE INDEX ix_batch_rows_batch_id ON batch_rows (batch_id);
 
 CREATE TABLE alembic_version (version_num VARCHAR(32) NOT NULL, CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num));
 
-INSERT INTO alembic_version (version_num) VALUES ('b6c7d8e9f0a1');
+INSERT INTO alembic_version (version_num) VALUES ('c8d9e0f1a2b3');
 
 COMMIT;

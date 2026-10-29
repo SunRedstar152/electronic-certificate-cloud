@@ -76,6 +76,7 @@ class TimestampMixin:
 
 class Organization(TimestampMixin, Base):
     __tablename__ = "organizations"
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
@@ -106,6 +107,7 @@ class Organization(TimestampMixin, Base):
 
 class User(TimestampMixin, Base):
     __tablename__ = "users"
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     __table_args__ = (
         CheckConstraint(
             "(role = 'admin' AND organization_id IS NULL) OR "
